@@ -1,0 +1,92 @@
+import { z } from "zod";
+
+const phone = z
+  .string()
+  .trim()
+  .min(8, "Nomor WhatsApp minimal 8 digit")
+  .max(20, "Nomor WhatsApp terlalu panjang")
+  .regex(/^[0-9+\-\s().]+$/, "Nomor WhatsApp tidak valid");
+
+// NOTE: fingerprint is attached by the client at submit time and validated
+// server-side — it is intentionally NOT part of these form schemas so an
+// empty initial value can't silently block React Hook Form submission.
+export const voterRegisterSchema = z
+  .object({
+    name: z.string().trim().min(2, "Nama minimal 2 karakter").max(100),
+    origin_school_name: z
+      .string()
+      .trim()
+      .min(2, "Nama sekolahmu minimal 2 karakter")
+      .max(150, "Nama sekolahmu terlalu panjang"),
+    school_id: z.string().uuid("Pilih sekolah peserta yang kamu dukung"),
+    voter_status: z.enum(
+      ["guru", "teman_luar_sekolah", "teman_siswa_sekolah"],
+      { required_error: "Pilih status kamu" }
+    ),
+    phone_number: phone,
+    password: z.string().min(6, "Password minimal 6 karakter").max(72),
+    confirm: z.string().min(1, "Konfirmasi password"),
+  })
+  .refine((d) => d.password === d.confirm, {
+    message: "Password tidak cocok",
+    path: ["confirm"],
+  });
+export type VoterRegisterInput = z.infer<typeof voterRegisterSchema>;
+
+export const voterSignInSchema = z.object({
+  phone_number: phone,
+  password: z.string().min(1, "Password wajib diisi"),
+});
+export type VoterSignInInput = z.infer<typeof voterSignInSchema>;
+
+export const credentialLoginSchema = z.object({
+  phone_number: phone,
+  password: z.string().min(1, "Password wajib diisi"),
+  fingerprint: z.string().optional(),
+  expected_role: z.enum(["admin", "participant"]).optional(),
+});
+export type CredentialLoginInput = z.infer<typeof credentialLoginSchema>;
+
+export const participantSchema = z
+  .object({
+    name: z.string().trim().min(2, "Nama peserta minimal 2 karakter").max(100),
+    // Either pick an existing school (school_id) or type a new one (school_name).
+    school_id: z.string().uuid().optional().or(z.literal("")),
+    school_name: z.string().trim().min(2).max(150).optional().or(z.literal("")),
+    phone_number: phone,
+    description: z.string().trim().max(1000).optional().or(z.literal("")),
+  })
+  .refine((d) => !!d.school_id || !!d.school_name, {
+    message: "Pilih atau ketik nama sekolah",
+    path: ["school_name"],
+  });
+export type ParticipantInput = z.infer<typeof participantSchema>;
+
+export const schoolSchema = z.object({
+  name: z.string().trim().min(2, "Nama sekolah minimal 2 karakter").max(150),
+});
+export type SchoolInput = z.infer<typeof schoolSchema>;
+
+export const questSchema = z.object({
+  name: z.string().trim().min(2, "Nama quest minimal 2 karakter").max(150),
+  description: z.string().trim().max(1000).optional().or(z.literal("")),
+  point: z.coerce.number().int().min(0, "Poin tidak boleh negatif").max(1000),
+  status: z.enum(["active", "inactive"]).default("active"),
+  proof_type: z.enum(["link", "file"]).default("file"),
+  frequency: z.enum(["once", "daily"]).default("once"),
+  ref_link: z.string().url("Link tidak valid").optional().or(z.literal("")),
+  ref_image: z.string().url().optional().or(z.literal("")),
+});
+export type QuestInput = z.infer<typeof questSchema>;
+
+export const voteSchema = z.object({
+  participant_id: z.string().uuid(),
+  fingerprint: z.string().min(1),
+});
+export type VoteInput = z.infer<typeof voteSchema>;
+
+export const submissionSchema = z.object({
+  participant_id: z.string().uuid("Pilih peserta"),
+  quest_id: z.string().uuid("Pilih quest"),
+});
+export type SubmissionInput = z.infer<typeof submissionSchema>;
