@@ -47,7 +47,8 @@ export default function AdminSubmissionsPage() {
       (s) =>
         s.participants?.name.toLowerCase().includes(q) ||
         s.participants?.schools?.name?.toLowerCase().includes(q) ||
-        s.profiles?.name.toLowerCase().includes(q)
+        s.voter_name?.toLowerCase().includes(q) ||
+        s.voter_email?.toLowerCase().includes(q)
     );
   }, [data, search]);
 
@@ -158,8 +159,16 @@ export default function AdminSubmissionsPage() {
                       : ""}
                   </p>
                   <p className="text-xs text-muted-foreground">
-                    Oleh: {s.profiles?.name ?? "—"}
+                    Oleh: {s.voter_name ?? "—"}
+                    {s.voter_email ? ` · ${s.voter_email}` : ""}
                   </p>
+                  {(s.voter_phone || s.voter_school) && (
+                    <p className="text-xs text-muted-foreground">
+                      {s.voter_phone ?? ""}
+                      {s.voter_school ? ` · ${s.voter_school}` : ""}
+                      {s.voter_class ? ` (${s.voter_class})` : ""}
+                    </p>
+                  )}
                   {s.status === "rejected" && s.review_note && (
                     <p className="mt-1 text-xs text-destructive">
                       Alasan: {s.review_note}

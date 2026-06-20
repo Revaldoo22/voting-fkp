@@ -179,7 +179,12 @@ export function useSubmissions(status?: string) {
     queryFn: async (): Promise<
       (Submission & {
         review_note: string | null;
-        profiles: { name: string } | null;
+        voter_name: string | null;
+        voter_phone: string | null;
+        voter_email: string | null;
+        voter_status: string | null;
+        voter_school: string | null;
+        voter_class: string | null;
         participants: {
           name: string;
           school_id: string;
@@ -191,7 +196,7 @@ export function useSubmissions(status?: string) {
       let q = sb()
         .from("submissions")
         .select(
-          "*, profiles(name), participants(name, school_id, schools(name)), quests(name, point, proof_type)"
+          "*, participants(name, school_id, schools(name)), quests(name, point, proof_type)"
         )
         .order("created_at", { ascending: false });
       if (status) q = q.eq("status", status);
@@ -322,152 +327,3 @@ export function useTopVoters(limit = 5) {
   });
 }
 
-export type ActivityItem = {
-  kind: "vote" | "quest";
-  participant_name: string;
-  label: string;
-  points: number;
-  status: string;
-  note?: string | null;
-  date: string;
-};
-
-/** Full activity history of the current voter (votes + quest submissions). */
-export function useMyActivity() {
-  return useQuery({
-    queryKey: ["my-activity"],
-    queryFn: async (): Promise<ActivityItem[]> => {
-      const {
-        data: { user },
-      } = await sb().auth.getUser();
-      if (!user) return [];
-
-      const [votes, subs] = await Promise.all([
-        sb()
-          .from("daily_votes")
-          .select("vote_date, created_at, participants(name)")
-          .eq("user_id", user.id)
-          .order("created_at", { ascending: false }),
-        sb()
-          .from("submissions")
-          .select(
-            "status, review_note, created_at, participants(name), quests(name, point)"
-          )
-          .eq("user_id", user.id)
-          .order("created_at", { ascending: false }),
-      ]);
-      if (votes.error) throw votes.error;
-      if (subs.error) throw subs.error;
-
-      const items: ActivityItem[] = [];
-      for (const v of (votes.data ?? []) as never[]) {
-        const r = v as { created_at: string; participants: { name: string } | null };
-        items.push({
-          kind: "vote",
-          participant_name: r.participants?.name ?? "—",
-          label: "Vote harian",
-          points: 5,
-          status: "approved",
-          date: r.created_at,
-        });
-      }
-      for (const s of (subs.data ?? []) as never[]) {
-        const r = s as {
-          status: string;
-          review_note: string | null;
-          created_at: string;
-          participants: { name: string } | null;
-          quests: { name: string; point: number } | null;
-        };
-        items.push({
-          kind: "quest",
-          participant_name: r.participants?.name ?? "—",
-          label: r.quests?.name ?? "Quest",
-          points: r.quests?.point ?? 0,
-          status: r.status,
-          note: r.review_note,
-          date: r.created_at,
-        });
-      }
-      items.sort((a, b) => (a.date < b.date ? 1 : -1));
-      return items;
-    },
-  });
-}
-
-/** Total points the voter has contributed, overall and per participant. */
-export function useMyContributions() {
-  return useQuery({
-    queryKey: ["my-contributions"],
-    queryFn: async (): Promise<{
-      total: number;
-      perParticipant: { name: string; points: number }[];
-    }> => {
-      const {
-        data: { user },
-      } = await sb().auth.getUser();
-      if (!user) return { total: 0, perParticipant: [] };
-
-      const [votes, subs] = await Promise.all([
-        sb()
-          .from("daily_votes")
-          .select("participants(name)")
-          .eq("user_id", user.id),
-        sb()
-          .from("submissions")
-          .select("participants(name), quests(point)")
-          .eq("user_id", user.id)
-          .eq("status", "approved"),
-      ]);
-      if (votes.error) throw votes.error;
-      if (subs.error) throw subs.error;
-
-      const map = new Map<string, number>();
-      const add = (name: string, pts: number) =>
-        map.set(name, (map.get(name) ?? 0) + pts);
-
-      for (const v of (votes.data ?? []) as never[]) {
-        const r = v as { participants: { name: string } | null };
-        add(r.participants?.name ?? "—", 5);
-      }
-      for (const s of (subs.data ?? []) as never[]) {
-        const r = s as {
-          participants: { name: string } | null;
-          quests: { point: number } | null;
-        };
-        add(r.participants?.name ?? "—", r.quests?.point ?? 0);
-      }
-
-      const perParticipant = Array.from(map, ([name, points]) => ({
-        name,
-        points,
-      })).sort((a, b) => b.points - a.points);
-      const total = perParticipant.reduce((s, p) => s + p.points, 0);
-      return { total, perParticipant };
-    },
-  });
-}
-
-/** Whether the current user already voted today. */
-export function useMyVoteToday() {
-  return useQuery({
-    queryKey: ["my-vote-today"],
-    queryFn: async (): Promise<{ voted: boolean; participant_id?: string }> => {
-      const {
-        data: { user },
-      } = await sb().auth.getUser();
-      if (!user) return { voted: false };
-      const today = new Date().toISOString().slice(0, 10);
-      const { data, error } = await sb()
-        .from("daily_votes")
-        .select("participant_id")
-        .eq("user_id", user.id)
-        .eq("vote_date", today)
-        .maybeSingle();
-      if (error) throw error;
-      return data
-        ? { voted: true, participant_id: data.participant_id }
-        : { voted: false };
-    },
-  });
-}

@@ -4,7 +4,6 @@ import { updateSession } from "@/lib/supabase/middleware";
 const ROLE_PREFIX: Record<string, string> = {
   "/admin": "admin",
   "/participant": "participant",
-  "/voter": "voter",
 };
 
 export async function middleware(request: NextRequest) {
@@ -43,7 +42,7 @@ export async function middleware(request: NextRequest) {
         ? "/admin"
         : profile?.role === "participant"
         ? "/participant/dashboard"
-        : "/voter/dashboard"
+        : "/"
     );
   }
 
@@ -51,5 +50,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/admin/:path*", "/participant/:path*", "/voter/:path*"],
+  matcher: ["/admin/:path*", "/participant/:path*"],
 };

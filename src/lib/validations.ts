@@ -13,16 +13,7 @@ const phone = z
 export const voterRegisterSchema = z
   .object({
     name: z.string().trim().min(2, "Nama minimal 2 karakter").max(100),
-    origin_school_name: z
-      .string()
-      .trim()
-      .min(2, "Nama sekolahmu minimal 2 karakter")
-      .max(150, "Nama sekolahmu terlalu panjang"),
-    school_id: z.string().uuid("Pilih sekolah peserta yang kamu dukung"),
-    voter_status: z.enum(
-      ["guru", "teman_luar_sekolah", "teman_siswa_sekolah"],
-      { required_error: "Pilih status kamu" }
-    ),
+    school_id: z.string().uuid("Pilih sekolah"),
     phone_number: phone,
     password: z.string().min(6, "Password minimal 6 karakter").max(72),
     confirm: z.string().min(1, "Konfirmasi password"),
@@ -79,14 +70,46 @@ export const questSchema = z.object({
 });
 export type QuestInput = z.infer<typeof questSchema>;
 
-export const voteSchema = z.object({
-  participant_id: z.string().uuid(),
-  fingerprint: z.string().min(1),
-});
-export type VoteInput = z.infer<typeof voteSchema>;
+export const voterStatusEnum = z.enum([
+  "teman_sekolah",
+  "guru",
+  "keluarga",
+  "teman_luar",
+]);
+export type VoterStatus = z.infer<typeof voterStatusEnum>;
 
-export const submissionSchema = z.object({
-  participant_id: z.string().uuid("Pilih peserta"),
-  quest_id: z.string().uuid("Pilih quest"),
-});
-export type SubmissionInput = z.infer<typeof submissionSchema>;
+export const voterClassEnum = z.enum(["10", "11", "12", "alumni"]);
+
+// Shared voter identity fields (anonymous voter fills this on each action).
+// School is optional; class only meaningful when a school is given.
+export const voterInfoSchema = z
+  .object({
+    name: z.string().trim().min(2, "Nama minimal 2 karakter").max(100),
+    phone_number: phone,
+    email: z.string().trim().email("Email tidak valid").max(150),
+    status: voterStatusEnum,
+    school: z.string().trim().max(150).optional().or(z.literal("")),
+    class: voterClassEnum.optional().or(z.literal("")),
+  })
+  .refine(
+    (d) => d.status !== "teman_sekolah" || (!!d.school && d.school.length >= 2),
+    { message: "Isi nama sekolah", path: ["school"] }
+  )
+  .refine((d) => !d.school || !!d.class, {
+    message: "Pilih kelas",
+    path: ["class"],
+  });
+export type VoterInfo = z.infer<typeof voterInfoSchema>;
+
+// API payloads = voter info + ids/fingerprint, validated as two parts
+// (voterInfoSchema is a ZodEffects from .refine and can't be .extend'd).
+export type VoteInput = VoterInfo & {
+  participant_id: string;
+  fingerprint: string;
+};
+
+export type SubmissionInput = VoterInfo & {
+  participant_id: string;
+  quest_id: string;
+  proof_url: string;
+};

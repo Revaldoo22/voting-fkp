@@ -5,10 +5,6 @@ export type Role = "admin" | "participant" | "voter";
 export type ParticipantStatus = "active" | "inactive";
 export type SubmissionStatus = "pending" | "approved" | "rejected";
 export type QuestStatus = "active" | "inactive";
-export type VoterStatus =
-  | "guru"
-  | "teman_luar_sekolah"
-  | "teman_siswa_sekolah";
 
 export interface School {
   id: string;
@@ -28,9 +24,7 @@ export interface Profile {
   id: string;
   name: string;
   phone_number: string;
-  origin_school_name: string | null;
   school_id: string | null;
-  voter_status: VoterStatus | null;
   role: Role;
   device_fingerprint: string | null;
   created_at: string;
@@ -66,11 +60,19 @@ export interface Quest {
 
 export interface Submission {
   id: string;
-  user_id: string;
+  user_id: string | null;
   participant_id: string;
   quest_id: string;
   proof_url: string;
   status: SubmissionStatus;
+  review_note: string | null;
+  voter_name: string | null;
+  voter_phone: string | null;
+  voter_email: string | null;
+  voter_status: string | null;
+  voter_school: string | null;
+  voter_class: string | null;
+  submit_date: string;
   created_at: string;
 }
 

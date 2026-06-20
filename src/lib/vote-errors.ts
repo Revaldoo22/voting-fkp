@@ -5,10 +5,13 @@ export function voteErrorMessage(raw: string | undefined | null): string {
     return "Perangkat ini sudah digunakan untuk memberikan dukungan hari ini.";
   }
   if (code.includes("ALREADYVOTED")) {
-    return "Kamu sudah memberikan dukungan hari ini. Kembali lagi besok!";
+    return "Kamu sudah mendukung peserta ini hari ini (terdeteksi dari perangkat/nomor/email). Kembali lagi besok!";
+  }
+  if (code.includes("MISSINGDATA")) {
+    return "Lengkapi data dulu (nama, nomor WhatsApp, email, status).";
   }
   if (code.includes("WRONGSCHOOL")) {
-    return "Kamu hanya dapat mendukung peserta dari sekolah yang kamu pilih saat daftar.";
+    return "Kamu hanya dapat mendukung peserta dari sekolahmu sendiri.";
   }
   if (code.includes("NOTLOGGEDIN")) {
     return "Sesi tidak valid. Silakan login kembali.";

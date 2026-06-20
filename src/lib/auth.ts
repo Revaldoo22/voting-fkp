@@ -19,7 +19,7 @@ export function roleHome(role: Role): string {
     case "participant":
       return "/participant/dashboard";
     default:
-      return "/voter/dashboard";
+      return "/";
   }
 }
 

@@ -17,7 +17,7 @@ Platform kompetisi karakter pelajar SMA/SMK. Setiap siswa jadi peserta individu 
 
 | Role | Login | Catatan |
 |------|-------|---------|
-| **Voter** | Nama + sekolahmu + sekolah peserta yang didukung + status + Nomor WhatsApp + password | 1 WhatsApp = 1 akun, 1 device = 1 akun |
+| **Voter** | Nama + Sekolah + Nomor WhatsApp (tanpa password) | Supabase Anonymous Auth. 1 WhatsApp = 1 akun, 1 device = 1 akun |
 | **Peserta** | Nomor WhatsApp + password | Password **dibuat otomatis** oleh admin saat peserta dibuat (ditampilkan sekali) |
 | **Admin** | Nomor WhatsApp + password | Di-seed (`seed.sql`) |
 
@@ -108,7 +108,7 @@ Buka http://localhost:3000.
 
 1. **Admin** login → `/admin/participants` → tambah peserta (nama, sekolah, foto, deskripsi). Sistem buat password peserta → salin & bagikan.
 2. Admin atur sekolah (`/admin/schools`) & quest (`/admin/quests`).
-3. **Voter** daftar (Nama + sekolahmu + sekolah peserta yang didukung + status + WA + password) → `/voter/dashboard` → lihat peserta dari **sekolah yang didukung** → Vote (+5/hari). Bisa kirim bukti quest.
+3. **Voter** login (Nama + Sekolah + WA) → `/voter/dashboard` → lihat peserta **sekolahnya saja** → Vote (+5/hari). Bisa kirim bukti quest.
 4. **Peserta** login → `/participant/dashboard` → poin, ranking, grafik perkembangan, supporter terbesar.
 5. Admin verifikasi quest di `/admin/submissions` → Approve → poin masuk otomatis (trigger DB).
 6. Publik: `/ranking` (realtime), `/top-voter`.
@@ -118,7 +118,7 @@ Buka http://localhost:3000.
 ```
 /                       Landing + leaderboard preview
 /login                  Voter / Admin-Peserta
-/voter/dashboard        Vote + quest (peserta sekolah yang didukung)
+/voter/dashboard        Vote + quest (peserta sekolah sendiri)
 /participant/dashboard  Data diri, ranking, grafik, supporter
 /admin                  Stats + chart (vote harian, pertumbuhan voter, peserta teratas)
 /admin/participants     CRUD peserta + generate password

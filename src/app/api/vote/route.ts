@@ -1,60 +1,60 @@
 import { NextResponse } from "next/server";
-import { createServerSupabase } from "@/lib/supabase/server";
+import { z } from "zod";
+import { createServiceSupabase } from "@/lib/supabase/server";
 import { ipHashFromRequest, serverHashFromHeaders } from "@/lib/server-hash";
 import { rateLimit } from "@/lib/rate-limit";
-import { voteSchema } from "@/lib/validations";
+import { voterInfoSchema } from "@/lib/validations";
 import { voteErrorMessage } from "@/lib/vote-errors";
+
+const schema = voterInfoSchema.and(
+  z.object({
+    participant_id: z.string().uuid(),
+    fingerprint: z.string().min(1, "Device tidak dikenali"),
+  })
+);
 
 export async function POST(request: Request) {
   const body = await request.json().catch(() => null);
-  const parsed = voteSchema.safeParse(body);
+  const parsed = schema.safeParse(body);
   if (!parsed.success) {
-    return NextResponse.json({ error: "Data tidak valid" }, { status: 400 });
-  }
-
-  const supabase = await createServerSupabase();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) {
     return NextResponse.json(
-      { error: "Sesi tidak valid. Silakan login kembali." },
-      { status: 401 }
+      { error: parsed.error.issues[0]?.message ?? "Data tidak valid" },
+      { status: 400 }
     );
   }
+  const d = parsed.data;
 
-  // Rate limit: max 10 vote attempts / minute per account.
-  if (!rateLimit(`vote:${user.id}`, 10, 60_000)) {
+  // Rate limit per device fingerprint.
+  if (!rateLimit(`vote:${d.fingerprint}`, 20, 60_000)) {
     return NextResponse.json(
       { error: "Terlalu banyak percobaan. Coba lagi sebentar." },
       { status: 429 }
     );
   }
 
-  const serverHash = serverHashFromHeaders(request.headers);
-  const ipHash = ipHashFromRequest(request);
-
-  // RPC runs the full anti-cheat check + point update atomically, using
-  // auth.uid() from the user's session (never a client-supplied id).
-  const { data, error } = await supabase.rpc("cast_daily_vote", {
-    p_participant_id: parsed.data.participant_id,
-    p_fingerprint: parsed.data.fingerprint,
-    p_server_hash: serverHash,
-    p_ip_hash: ipHash,
+  const service = createServiceSupabase();
+  const { data, error } = await service.rpc("cast_vote", {
+    p_participant_id: d.participant_id,
+    p_fingerprint: d.fingerprint,
+    p_name: d.name,
+    p_phone: d.phone_number,
+    p_email: d.email,
+    p_status: d.status,
+    p_school: d.school || null,
+    p_class: d.class || null,
+    p_server_hash: serverHashFromHeaders(request.headers),
+    p_ip_hash: ipHashFromRequest(request),
   });
 
   if (error) {
+    const m = error.message;
     const status =
-      error.message.includes("DEVICE") ||
-      error.message.includes("ALREADYVOTED") ||
-      error.message.includes("IPLIMIT") ||
-      error.message.includes("EVENTCLOSED")
+      m.includes("ALREADYVOTED") ||
+      m.includes("IPLIMIT") ||
+      m.includes("EVENTCLOSED")
         ? 409
         : 400;
-    return NextResponse.json(
-      { error: voteErrorMessage(error.message) },
-      { status }
-    );
+    return NextResponse.json({ error: voteErrorMessage(m) }, { status });
   }
 
   return NextResponse.json({ ok: true, participant: data });
