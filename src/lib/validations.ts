@@ -31,9 +31,9 @@ export const voterSignInSchema = z.object({
 export type VoterSignInInput = z.infer<typeof voterSignInSchema>;
 
 export const credentialLoginSchema = z.object({
-  phone_number: phone,
+  // Nama lengkap ATAU nomor WhatsApp.
+  identifier: z.string().trim().min(2, "Isi nama atau nomor WhatsApp"),
   password: z.string().min(1, "Password wajib diisi"),
-  fingerprint: z.string().optional(),
   expected_role: z.enum(["admin", "participant"]).optional(),
 });
 export type CredentialLoginInput = z.infer<typeof credentialLoginSchema>;
@@ -95,7 +95,7 @@ export const voterInfoSchema = z
     (d) => d.status !== "teman_sekolah" || (!!d.school && d.school.length >= 2),
     { message: "Isi nama sekolah", path: ["school"] }
   )
-  .refine((d) => !d.school || !!d.class, {
+  .refine((d) => d.status !== "teman_sekolah" || !!d.class, {
     message: "Pilih kelas",
     path: ["class"],
   });

@@ -75,7 +75,8 @@ export function VoterFormFields({
     onChange({ ...data, ...patch });
 
   const schoolRequired = data.status === "teman_sekolah";
-  const showClass = !!data.school.trim();
+  // Kelas hanya untuk teman satu sekolah.
+  const showClass = data.status === "teman_sekolah" && !!data.school.trim();
 
   return (
     <div className="space-y-3">

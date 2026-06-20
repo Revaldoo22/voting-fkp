@@ -169,6 +169,19 @@ export default function AdminSubmissionsPage() {
                       {s.voter_class ? ` (${s.voter_class})` : ""}
                     </p>
                   )}
+                  {s.participant_contents?.url && (
+                    <p className="mt-1 text-xs">
+                      <span className="text-muted-foreground">Konten peserta: </span>
+                      <a
+                        href={s.participant_contents.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="break-all text-primary hover:underline"
+                      >
+                        {s.participant_contents.url}
+                      </a>
+                    </p>
+                  )}
                   {s.status === "rejected" && s.review_note && (
                     <p className="mt-1 text-xs text-destructive">
                       Alasan: {s.review_note}

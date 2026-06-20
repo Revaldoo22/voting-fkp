@@ -10,6 +10,12 @@ export function voteErrorMessage(raw: string | undefined | null): string {
   if (code.includes("MISSINGDATA")) {
     return "Lengkapi data dulu (nama, nomor WhatsApp, email, status).";
   }
+  if (code.includes("SELFVOTE")) {
+    return "Kamu tidak bisa mendukung dirimu sendiri.";
+  }
+  if (code.includes("PHONE_NAME")) {
+    return "Nomor WhatsApp ini sudah terdaftar dengan nama lain. Gunakan nama yang sama seperti sebelumnya.";
+  }
   if (code.includes("WRONGSCHOOL")) {
     return "Kamu hanya dapat mendukung peserta dari sekolahmu sendiri.";
   }

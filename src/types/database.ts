@@ -44,6 +44,16 @@ export interface Participant {
 
 export type ProofType = "link" | "file";
 export type QuestFrequency = "once" | "daily";
+export type ContentKind = "engage" | "sound";
+
+export interface ParticipantContent {
+  id: string;
+  participant_id: string;
+  kind: ContentKind;
+  url: string;
+  label: string | null;
+  created_at: string;
+}
 
 export interface Quest {
   id: string;
@@ -53,6 +63,7 @@ export interface Quest {
   status: QuestStatus;
   proof_type: ProofType;
   frequency: QuestFrequency;
+  content_kind: ContentKind | null;
   ref_link: string | null;
   ref_image: string | null;
   created_at: string;
@@ -63,6 +74,7 @@ export interface Submission {
   user_id: string | null;
   participant_id: string;
   quest_id: string;
+  content_id: string | null;
   proof_url: string;
   status: SubmissionStatus;
   review_note: string | null;
@@ -102,6 +114,7 @@ export interface PointHistoryRow {
 
 export interface TopSupporter {
   voter_name: string;
+  voter_status: string | null;
   votes: number;
   points: number;
 }

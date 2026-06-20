@@ -158,6 +158,80 @@ export function useMyParticipant() {
   });
 }
 
+// ------------------------- Participant contents ----------------------
+export function useParticipantContents(participantId?: string) {
+  return useQuery({
+    queryKey: ["participant-contents", participantId],
+    enabled: !!participantId,
+    queryFn: async (): Promise<
+      import("@/types/database").ParticipantContent[]
+    > => {
+      const { data, error } = await sb()
+        .from("participant_contents")
+        .select("*")
+        .eq("participant_id", participantId)
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return data as import("@/types/database").ParticipantContent[];
+    },
+  });
+}
+
+/**
+ * content_ids already submitted (non-rejected) by this voter (by email) for a
+ * given participant + quest — used to grey out done content options.
+ */
+export function useDoneContentIds(
+  participantId: string,
+  questId: string,
+  email: string
+) {
+  return useQuery({
+    queryKey: ["done-content", participantId, questId, email.toLowerCase()],
+    enabled: !!participantId && !!questId && !!email,
+    queryFn: async (): Promise<string[]> => {
+      const { data, error } = await sb()
+        .from("submissions")
+        .select("content_id, status")
+        .eq("participant_id", participantId)
+        .eq("quest_id", questId)
+        .eq("voter_email", email.trim().toLowerCase());
+      if (error) throw error;
+      return ((data ?? []) as { content_id: string | null; status: string }[])
+        .filter((s) => s.status !== "rejected" && s.content_id)
+        .map((s) => s.content_id as string);
+    },
+  });
+}
+
+/** The logged-in participant's own content links. */
+export function useMyContents() {
+  return useQuery({
+    queryKey: ["my-contents"],
+    queryFn: async (): Promise<
+      import("@/types/database").ParticipantContent[]
+    > => {
+      const {
+        data: { user },
+      } = await sb().auth.getUser();
+      if (!user) return [];
+      const { data: p } = await sb()
+        .from("participants")
+        .select("id")
+        .eq("profile_id", user.id)
+        .maybeSingle();
+      if (!p) return [];
+      const { data, error } = await sb()
+        .from("participant_contents")
+        .select("*")
+        .eq("participant_id", p.id)
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return data as import("@/types/database").ParticipantContent[];
+    },
+  });
+}
+
 // ------------------------------ Quests -------------------------------
 export function useQuests(activeOnly = false) {
   return useQuery({
@@ -191,12 +265,13 @@ export function useSubmissions(status?: string) {
           schools: { name: string } | null;
         } | null;
         quests: { name: string; point: number; proof_type: string } | null;
+        participant_contents: { url: string; kind: string } | null;
       })[]
     > => {
       let q = sb()
         .from("submissions")
         .select(
-          "*, participants(name, school_id, schools(name)), quests(name, point, proof_type)"
+          "*, participants(name, school_id, schools(name)), quests(name, point, proof_type), participant_contents(url, kind)"
         )
         .order("created_at", { ascending: false });
       if (status) q = q.eq("status", status);

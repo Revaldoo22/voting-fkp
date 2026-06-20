@@ -17,13 +17,15 @@
 -- bisa memilih sekolah yang sudah memiliki peserta.
 
 -- ---- Quests (starter quests) ----------------------------------------
+-- NOTE: jika sudah menjalankan migration 0010, daftar quest sudah terisi.
+-- Block ini untuk setup baru yang menjalankan seed.sql langsung.
 -- proof_type 'file' = upload screenshot; 'link' = kirim URL postingan.
--- Ganti URL akun di deskripsi sesuai akun resmi panitia.
-insert into public.quests (name, description, point, status, proof_type) values
-  ('Follow TikTok STEKOM',   'Follow TikTok @stekom lalu upload screenshot bukti follow.',        10, 'active', 'file'),
-  ('Follow Instagram STEKOM','Follow Instagram @stekom lalu upload screenshot bukti follow.',     10, 'active', 'file'),
-  ('Follow TikTok Toploker', 'Follow TikTok @toploker lalu upload screenshot bukti follow.',      10, 'active', 'file'),
-  ('Follow Instagram Toploker','Follow Instagram @toploker lalu upload screenshot bukti follow.', 10, 'active', 'file'),
-  ('Bikin Video Dukungan',   'Buat video dukungan, posting di sosial media, lalu kirim link postingannya.', 50, 'active', 'link'),
-  ('Bikin Poster Dukungan',  'Buat poster ajakan dukungan, posting di sosial media, lalu kirim link postingannya.', 30, 'active', 'link')
+insert into public.quests (name, description, point, status, proof_type, frequency) values
+  ('Follow Instagram STEKOM', 'Follow akun Instagram resmi STEKOM, lalu upload screenshot bukti follow.', 10, 'active', 'file', 'once'),
+  ('Follow TikTok STEKOM', 'Follow akun TikTok resmi STEKOM, lalu upload screenshot bukti follow.', 10, 'active', 'file', 'once'),
+  ('Follow Instagram Toploker', 'Follow akun Instagram Toploker, lalu upload screenshot bukti follow.', 10, 'active', 'file', 'once'),
+  ('Follow TikTok Toploker', 'Follow akun TikTok Toploker, lalu upload screenshot bukti follow.', 10, 'active', 'file', 'once'),
+  ('Bikin Konten Dukungan', 'Buat konten (video/reel) dukungan untuk peserta, posting, lalu kirim link postingannya.', 50, 'active', 'link', 'once'),
+  ('Like, Komen, Repost Video Peserta', 'Like, komentari, dan repost video peserta, lalu upload screenshot buktinya.', 20, 'active', 'file', 'once'),
+  ('Konten Pakai Sound Video Peserta', 'Buat konten TikTok memakai sound yang ada di video peserta, lalu kirim link kontenmu.', 50, 'active', 'link', 'once')
 on conflict do nothing;

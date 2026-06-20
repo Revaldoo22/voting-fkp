@@ -12,7 +12,7 @@ import {
   Upload,
 } from "lucide-react";
 import { toast } from "sonner";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Navbar } from "@/components/navbar";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -30,7 +30,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { EmptyState, ErrorState } from "@/components/states";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useQuests, useSettings } from "@/lib/queries";
+import {
+  useDoneContentIds,
+  useParticipantContents,
+  useQuests,
+  useSettings,
+} from "@/lib/queries";
+import { CheckCircle2, ExternalLink } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { getFingerprint } from "@/lib/fingerprint";
 import { formatNumber } from "@/lib/utils";
@@ -267,13 +273,36 @@ function QuestCard({
   const [open, setOpen] = React.useState(false);
   const [file, setFile] = React.useState<File | null>(null);
   const [link, setLink] = React.useState("");
+  const [contentId, setContentId] = React.useState("");
   const [busy, setBusy] = React.useState(false);
+  const qc = useQueryClient();
   const isLink = quest.proof_type === "link";
+  const needsContent = !!quest.content_kind;
+
+  // Participant contents to choose from (only for content-kind quests).
+  const { data: contents } = useParticipantContents(
+    needsContent ? participantId : undefined
+  );
+  const allOptions = (contents ?? []).filter(
+    (c) => c.kind === quest.content_kind
+  );
+  // Which of those this voter already completed (by email).
+  const { data: doneIds } = useDoneContentIds(
+    needsContent ? participantId : "",
+    needsContent ? quest.id : "",
+    voter.data.email
+  );
+  const doneSet = new Set(doneIds ?? []);
+  const remaining = allOptions.filter((c) => !doneSet.has(c.id));
 
   async function submit() {
     const err = validateVoter(voter.data);
     if (err) {
       toast.error(err);
+      return;
+    }
+    if (needsContent && !contentId) {
+      toast.error("Pilih konten peserta dulu.");
       return;
     }
     setBusy(true);
@@ -312,6 +341,7 @@ function QuestCard({
           participant_id: participantId,
           quest_id: quest.id,
           proof_url: proofUrl,
+          content_id: needsContent ? contentId : undefined,
         }),
       });
       const data = await res.json();
@@ -324,6 +354,8 @@ function QuestCard({
       setOpen(false);
       setFile(null);
       setLink("");
+      setContentId("");
+      qc.invalidateQueries({ queryKey: ["done-content"] });
     } finally {
       setBusy(false);
     }
@@ -364,9 +396,28 @@ function QuestCard({
             <LinkIcon className="h-4 w-4" /> Buka arahan / akun
           </a>
         )}
+        {needsContent && allOptions.length === 0 && (
+          <p className="text-xs text-muted-foreground">
+            Peserta belum menambahkan konten untuk quest ini.
+          </p>
+        )}
+        {needsContent && allOptions.length > 0 && remaining.length === 0 && (
+          <Badge variant="success" className="gap-1">
+            <CheckCircle2 className="h-4 w-4" /> Semua konten sudah dikerjakan
+          </Badge>
+        )}
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild>
-            <Button size="sm" variant="accent" className="w-full" disabled={disabled}>
+            <Button
+              size="sm"
+              variant="accent"
+              className="w-full"
+              disabled={
+                disabled ||
+                (needsContent &&
+                  (allOptions.length === 0 || remaining.length === 0))
+              }
+            >
               {isLink ? <LinkIcon className="h-4 w-4" /> : <Upload className="h-4 w-4" />}
               {disabled ? "Event ditutup" : "Kerjakan Quest"}
             </Button>
@@ -379,6 +430,72 @@ function QuestCard({
                 dulu sebelum poin masuk.
               </DialogDescription>
             </DialogHeader>
+
+            {needsContent && (
+              <div className="space-y-1.5">
+                <Label>
+                  Pilih konten peserta{" "}
+                  {quest.content_kind === "sound"
+                    ? "(sumber sound)"
+                    : "(untuk like/komen/repost)"}
+                </Label>
+                <div className="space-y-2">
+                  {allOptions.map((c, i) => {
+                    const done = doneSet.has(c.id);
+                    return (
+                      <label
+                        key={c.id}
+                        className={`flex items-center gap-2 rounded-md border p-2 text-sm ${
+                          done
+                            ? "opacity-60"
+                            : contentId === c.id
+                            ? "border-primary bg-primary/5"
+                            : ""
+                        }`}
+                      >
+                        <input
+                          type="radio"
+                          name={`content-${quest.id}`}
+                          disabled={done}
+                          checked={contentId === c.id}
+                          onChange={() => setContentId(c.id)}
+                        />
+                        <span className="min-w-0 flex-1 font-medium">
+                          Konten {i + 1}
+                        </span>
+                        {done ? (
+                          <Badge variant="success" className="gap-1">
+                            <CheckCircle2 className="h-3.5 w-3.5" /> Sudah
+                          </Badge>
+                        ) : (
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="outline"
+                            asChild
+                          >
+                            <a
+                              href={c.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                            >
+                              <ExternalLink className="h-4 w-4" /> Buka
+                            </a>
+                          </Button>
+                        )}
+                      </label>
+                    );
+                  })}
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Buka kontennya,{" "}
+                  {quest.content_kind === "sound"
+                    ? "buat konten pakai sound itu, lalu kirim link kontenmu."
+                    : "lakukan like/komen/repost, lalu upload screenshot."}
+                </p>
+              </div>
+            )}
+
             <VoterFormFields data={voter.data} onChange={voter.setData} />
             {isLink ? (
               <div className="space-y-1.5">

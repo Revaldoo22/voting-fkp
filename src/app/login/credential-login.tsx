@@ -30,7 +30,7 @@ export function CredentialLogin({
 
   const form = useForm<CredentialLoginInput>({
     resolver: zodResolver(credentialLoginSchema),
-    defaultValues: { phone_number: "", password: "", expected_role: role },
+    defaultValues: { identifier: "", password: "", expected_role: role },
   });
 
   async function onSubmit(values: CredentialLoginInput) {
@@ -62,16 +62,19 @@ export function CredentialLogin({
         <CardContent>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <div className="space-y-1.5">
-              <Label htmlFor="c-phone">Nomor WhatsApp</Label>
+              <Label htmlFor="c-id">
+                {role === "participant" ? "Nama atau Nomor WhatsApp" : "Nomor WhatsApp"}
+              </Label>
               <Input
-                id="c-phone"
-                placeholder="0812xxxxxxxx"
-                inputMode="tel"
-                {...form.register("phone_number")}
+                id="c-id"
+                placeholder={
+                  role === "participant" ? "Nama lengkap / 0812xxxxxxxx" : "0812xxxxxxxx"
+                }
+                {...form.register("identifier")}
               />
-              {form.formState.errors.phone_number && (
+              {form.formState.errors.identifier && (
                 <p className="text-xs text-destructive">
-                  {form.formState.errors.phone_number.message}
+                  {form.formState.errors.identifier.message}
                 </p>
               )}
             </div>

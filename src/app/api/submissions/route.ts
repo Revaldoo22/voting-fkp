@@ -62,6 +62,32 @@ export async function POST(request: Request) {
         { error: "Kamu sudah mengerjakan quest ini untuk peserta tersebut." },
         { status: 409 }
       );
+    if (m.includes("DUPLICATE_LINK"))
+      return NextResponse.json(
+        {
+          error:
+            "Link ini sudah pernah dikirim. Setiap link konten hanya bisa dipakai satu kali.",
+        },
+        { status: 409 }
+      );
+    if (m.includes("SELFVOTE"))
+      return NextResponse.json(
+        { error: "Kamu tidak bisa mengerjakan quest untuk dirimu sendiri." },
+        { status: 409 }
+      );
+    if (m.includes("PHONE_NAME"))
+      return NextResponse.json(
+        {
+          error:
+            "Nomor WhatsApp ini sudah terdaftar dengan nama lain. Gunakan nama yang sama.",
+        },
+        { status: 409 }
+      );
+    if (m.includes("CONTENT_REQUIRED") || m.includes("CONTENT_INVALID"))
+      return NextResponse.json(
+        { error: "Pilih konten peserta yang valid dulu." },
+        { status: 400 }
+      );
     return NextResponse.json({ error: m }, { status: 500 });
   }
 
