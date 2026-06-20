@@ -62,14 +62,10 @@ export function CredentialLogin({
         <CardContent>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <div className="space-y-1.5">
-              <Label htmlFor="c-id">
-                {role === "participant" ? "Nama atau Nomor WhatsApp" : "Nomor WhatsApp"}
-              </Label>
+              <Label htmlFor="c-id">Nama atau Nomor WhatsApp</Label>
               <Input
                 id="c-id"
-                placeholder={
-                  role === "participant" ? "Nama lengkap / 0812xxxxxxxx" : "0812xxxxxxxx"
-                }
+                placeholder="Nama / 0812xxxxxxxx"
                 {...form.register("identifier")}
               />
               {form.formState.errors.identifier && (

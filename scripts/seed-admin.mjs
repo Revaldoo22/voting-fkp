@@ -19,8 +19,10 @@ if (!url || !key) {
   process.exit(1);
 }
 
-const phone = (process.argv[2] || "081200000000").replace(/[\s\-().]/g, "");
-const password = process.argv[3] || "admin123";
+// Usage: npm run seed:admin [phone] [password] [name]
+const phone = (process.argv[2] || "08888555591").replace(/[\s\-().]/g, "");
+const password = process.argv[3] || "fkp@2026";
+const name = process.argv[4] || "admin";
 const email = `${phone}@stekom.local`;
 
 const s = createClient(url, key, { auth: { persistSession: false } });
@@ -38,12 +40,28 @@ async function findUserByEmail(targetEmail) {
 }
 
 const run = async () => {
-  // Clean up any prior account for this email/phone.
+  // Remove ALL existing admins (replace with the single new admin).
+  const { data: oldAdmins } = await s
+    .from("profiles")
+    .select("id")
+    .eq("role", "admin");
+  for (const a of oldAdmins ?? []) {
+    await s.from("profiles").delete().eq("id", a.id);
+    try {
+      await s.auth.admin.deleteUser(a.id);
+    } catch {
+      /* ignore */
+    }
+  }
+  if ((oldAdmins ?? []).length) {
+    console.log(`Removed ${oldAdmins.length} existing admin(s).`);
+  }
+
+  // Clean up any leftover account for this email/phone.
   const existing = await findUserByEmail(email);
   if (existing) {
     await s.from("profiles").delete().eq("id", existing.id);
     await s.auth.admin.deleteUser(existing.id);
-    console.log("Removed existing admin auth user.");
   }
   await s.from("profiles").delete().eq("phone_number", phone);
 
@@ -51,7 +69,7 @@ const run = async () => {
     email,
     password,
     email_confirm: true,
-    user_metadata: { name: "Administrator", role: "admin" },
+    user_metadata: { name, role: "admin" },
   });
   if (error) {
     console.error("createUser failed:", error.message || error);
@@ -67,7 +85,7 @@ const run = async () => {
   const uid = data.user.id;
   const { error: pe } = await s
     .from("profiles")
-    .upsert({ id: uid, name: "Administrator", phone_number: phone, role: "admin" });
+    .upsert({ id: uid, name, phone_number: phone, role: "admin" });
   if (pe) {
     console.error("profile upsert failed:", pe.message);
     process.exit(1);
