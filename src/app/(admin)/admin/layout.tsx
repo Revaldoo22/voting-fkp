@@ -6,6 +6,7 @@ import {
   ClipboardCheck,
   Trophy,
   School,
+  Users,
 } from "lucide-react";
 import { Navbar } from "@/components/navbar";
 
@@ -20,6 +21,7 @@ export default function AdminLayout({
         links={[
           { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
           { href: "/admin/participants", label: "Peserta", icon: GraduationCap },
+          { href: "/admin/voters", label: "Voter", icon: Users },
           { href: "/admin/submissions", label: "Submission", icon: ClipboardCheck },
           { href: "/admin/quests", label: "Quest", icon: Trophy },
           { href: "/admin/schools", label: "Sekolah", icon: School },

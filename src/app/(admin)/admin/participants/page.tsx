@@ -30,8 +30,13 @@ import {
 } from "@/components/ui/table";
 import { CardSkeletonGrid, EmptyState, ErrorState } from "@/components/states";
 import { useConfirm } from "@/components/confirm-dialog";
-import { useParticipants, useSchools } from "@/lib/queries";
+import {
+  useParticipantPointLog,
+  useParticipants,
+  useSchools,
+} from "@/lib/queries";
 import { createClient } from "@/lib/supabase/client";
+import { compressImage } from "@/lib/image-compress";
 import { participantSchema, type ParticipantInput } from "@/lib/validations";
 import { formatNumber } from "@/lib/utils";
 import type { ParticipantWithSchool } from "@/types/database";
@@ -47,6 +52,7 @@ export default function AdminParticipantsPage() {
 
   const [open, setOpen] = React.useState(false);
   const [editing, setEditing] = React.useState<ParticipantWithSchool | null>(null);
+  const [detail, setDetail] = React.useState<ParticipantWithSchool | null>(null);
   const [creds, setCreds] = React.useState<{
     name: string;
     phone_number?: string;
@@ -135,11 +141,12 @@ export default function AdminParticipantsPage() {
   async function uploadPhoto(): Promise<string | null> {
     if (!photo) return null;
     const supabase = createClient();
-    const ext = photo.name.split(".").pop();
-    const path = `${Date.now()}-${Math.round(Number(photo.size))}.${ext}`;
+    const compressed = await compressImage(photo);
+    const ext = compressed.name.split(".").pop();
+    const path = `${Date.now()}-${Math.round(Number(compressed.size))}.${ext}`;
     const { error } = await supabase.storage
       .from("participant-photos")
-      .upload(path, photo, { upsert: false });
+      .upload(path, compressed, { upsert: false });
     if (error) {
       toast.error("Gagal upload foto: " + error.message);
       throw error;
@@ -318,7 +325,11 @@ export default function AdminParticipantsPage() {
                 {paged.map((p) => (
                   <TableRow key={p.id}>
                     <TableCell>
-                      <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        className="flex items-center gap-2 text-left hover:underline"
+                        onClick={() => setDetail(p)}
+                      >
                         <Avatar className="h-8 w-8">
                           {p.photo_url && (
                             <AvatarImage src={p.photo_url} alt={p.name} />
@@ -328,7 +339,7 @@ export default function AdminParticipantsPage() {
                           </AvatarFallback>
                         </Avatar>
                         <span className="font-medium">{p.name}</span>
-                      </div>
+                      </button>
                     </TableCell>
                     <TableCell className="font-mono text-sm text-muted-foreground">
                       {p.profiles?.phone_number ?? "—"}
@@ -520,6 +531,12 @@ export default function AdminParticipantsPage() {
         </DialogContent>
       </Dialog>
 
+      {/* Participant detail — supporters */}
+      <ParticipantDetailDialog
+        participant={detail}
+        onClose={() => setDetail(null)}
+      />
+
       {/* Set / change password */}
       <Dialog
         open={!!pwTarget}
@@ -606,5 +623,155 @@ export default function AdminParticipantsPage() {
         </DialogContent>
       </Dialog>
     </div>
+  );
+}
+
+function ParticipantDetailDialog({
+  participant,
+  onClose,
+}: {
+  participant: ParticipantWithSchool | null;
+  onClose: () => void;
+}) {
+  const { data: log, isLoading } = useParticipantPointLog(participant?.id);
+  const [sourceFilter, setSourceFilter] = React.useState("");
+  const [from, setFrom] = React.useState("");
+  const [to, setTo] = React.useState("");
+  const [search, setSearch] = React.useState("");
+
+  React.useEffect(() => {
+    setSourceFilter("");
+    setFrom("");
+    setTo("");
+    setSearch("");
+  }, [participant?.id]);
+
+  const fmtDate = (s: string) =>
+    new Date(s).toLocaleString("id-ID", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+
+  // Distinct sources (Vote harian + nama quest) for the dropdown.
+  const sources = React.useMemo(() => {
+    const set = new Set<string>();
+    (log ?? []).forEach((r) => set.add(r.source));
+    return Array.from(set);
+  }, [log]);
+
+  const q = search.trim().toLowerCase();
+  const rows = React.useMemo(() => {
+    return (log ?? []).filter((r) => {
+      if (sourceFilter && r.source !== sourceFilter) return false;
+      const d = r.created_at.slice(0, 10);
+      if (from && d < from) return false;
+      if (to && d > to) return false;
+      if (
+        q &&
+        !(
+          r.voter_name?.toLowerCase().includes(q) ||
+          r.voter_phone?.includes(q)
+        )
+      )
+        return false;
+      return true;
+    });
+  }, [log, sourceFilter, from, to, q]);
+
+  const shownPoints = rows.reduce((s, r) => s + r.points, 0);
+  const sel =
+    "h-8 rounded-md border border-input bg-transparent px-2 text-xs shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring";
+
+  return (
+    <Dialog open={!!participant} onOpenChange={(o) => !o && onClose()}>
+      <DialogContent className="max-w-2xl">
+        <DialogHeader>
+          <DialogTitle>{participant?.name}</DialogTitle>
+          <DialogDescription>
+            {participant?.schools?.name ?? "—"} · Total{" "}
+            {formatNumber(participant?.total_points ?? 0)} poin · Rincian poin
+            masuk
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="flex flex-wrap items-center gap-2">
+          <Input
+            placeholder="Cari voter..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="h-8 w-full sm:w-40"
+          />
+          <select
+            className={sel}
+            value={sourceFilter}
+            onChange={(e) => setSourceFilter(e.target.value)}
+          >
+            <option value="">Semua sumber</option>
+            {sources.map((s) => (
+              <option key={s} value={s}>
+                {s}
+              </option>
+            ))}
+          </select>
+          <Input
+            type="date"
+            value={from}
+            onChange={(e) => setFrom(e.target.value)}
+            className="h-8 w-36"
+          />
+          <Input
+            type="date"
+            value={to}
+            onChange={(e) => setTo(e.target.value)}
+            className="h-8 w-36"
+          />
+        </div>
+
+        {isLoading ? (
+          <div className="flex justify-center py-8">
+            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+          </div>
+        ) : rows.length === 0 ? (
+          <EmptyState title="Tidak ada poin masuk pada filter ini" />
+        ) : (
+          <>
+            <p className="text-xs text-muted-foreground">
+              {formatNumber(rows.length)} entri · {formatNumber(shownPoints)} poin
+            </p>
+            <div className="max-h-[55vh] space-y-2 overflow-y-auto">
+              {rows.map((r, i) => (
+                <div
+                  key={i}
+                  className="flex items-center justify-between gap-2 rounded-md border p-2.5 text-sm"
+                >
+                  <div className="min-w-0">
+                    <p className="flex items-center gap-1.5 font-medium">
+                      <Badge
+                        variant={r.kind === "vote" ? "secondary" : "accent"}
+                        className="shrink-0"
+                      >
+                        {r.source}
+                      </Badge>
+                    </p>
+                    <p className="truncate text-xs text-muted-foreground">
+                      {r.voter_name} · {r.voter_phone}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {fmtDate(r.created_at)}
+                    </p>
+                  </div>
+                  <span className="shrink-0 font-semibold text-primary">
+                    +{r.points}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </>
+        )}
+      </DialogContent>
+    </Dialog>
   );
 }

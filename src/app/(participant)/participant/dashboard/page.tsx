@@ -4,8 +4,11 @@ import * as React from "react";
 import {
   Award,
   Camera,
+  ChevronDown,
+  Link as LinkIcon,
   Loader2,
   Plus,
+  Settings,
   TrendingUp,
   Trophy,
   Trash2,
@@ -35,6 +38,7 @@ import {
   useTopSupporters,
 } from "@/lib/queries";
 import { createClient } from "@/lib/supabase/client";
+import { compressImage } from "@/lib/image-compress";
 import { formatNumber, voterStatusLabel } from "@/lib/utils";
 import { ContactAdminButton } from "@/components/contact-admin";
 
@@ -55,11 +59,12 @@ function ChangePhotoButton({ onChanged }: { onChanged: () => void }) {
         toast.error("Sesi tidak valid.");
         return;
       }
-      const ext = file.name.split(".").pop();
+      const img = await compressImage(file);
+      const ext = img.name.split(".").pop();
       const path = `${user.id}/${Date.now()}.${ext}`;
       const { error: upErr } = await supabase.storage
         .from("participant-photos")
-        .upload(path, file, { upsert: true });
+        .upload(path, img, { upsert: true });
       if (upErr) {
         toast.error("Gagal upload: " + upErr.message);
         return;
@@ -108,6 +113,41 @@ function ChangePhotoButton({ onChanged }: { onChanged: () => void }) {
         Ganti Foto
       </Button>
     </>
+  );
+}
+
+function Section({
+  title,
+  desc,
+  icon: Icon,
+  defaultOpen = false,
+  children,
+}: {
+  title: string;
+  desc?: string;
+  icon: React.ElementType;
+  defaultOpen?: boolean;
+  children: React.ReactNode;
+}) {
+  return (
+    <details
+      open={defaultOpen}
+      className="group rounded-xl border bg-card [&[open]_.chev]:rotate-180"
+    >
+      <summary className="flex cursor-pointer list-none items-center gap-3 p-4">
+        <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 text-primary">
+          <Icon className="h-5 w-5" />
+        </span>
+        <span className="min-w-0 flex-1">
+          <span className="block font-semibold">{title}</span>
+          {desc && (
+            <span className="block text-xs text-muted-foreground">{desc}</span>
+          )}
+        </span>
+        <ChevronDown className="chev h-5 w-5 shrink-0 text-muted-foreground transition-transform" />
+      </summary>
+      <div className="border-t p-4">{children}</div>
+    </details>
   );
 }
 
@@ -170,22 +210,28 @@ function ParticipantSettings({
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-base">Pengaturan</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-6">
+    <Section
+      title="Pengaturan Akun"
+      desc="Ubah deskripsi & password kamu"
+      icon={Settings}
+    >
+      <div className="space-y-6">
         <div className="space-y-2">
-          <Label>Deskripsi</Label>
+          <Label>Tentang Kamu</Label>
           <Textarea
             rows={3}
             value={desc}
             onChange={(e) => setDesc(e.target.value)}
-            placeholder="Ceritakan tentang dirimu..."
+            placeholder="Tulis sedikit tentang dirimu, biar pendukung kenal kamu..."
           />
-          <Button size="sm" onClick={saveDesc} disabled={savingDesc}>
+          <Button
+            size="sm"
+            className="w-full sm:w-auto"
+            onClick={saveDesc}
+            disabled={savingDesc}
+          >
             {savingDesc && <Loader2 className="h-4 w-4 animate-spin" />}
-            Simpan Deskripsi
+            Simpan
           </Button>
         </div>
 
@@ -193,23 +239,28 @@ function ParticipantSettings({
           <Label>Ganti Password</Label>
           <Input
             type="password"
-            placeholder="Password baru (min. 6)"
+            placeholder="Password baru (minimal 6 huruf/angka)"
             value={pw}
             onChange={(e) => setPw(e.target.value)}
           />
           <Input
             type="password"
-            placeholder="Ulangi password baru"
+            placeholder="Ketik ulang password baru"
             value={pw2}
             onChange={(e) => setPw2(e.target.value)}
           />
-          <Button size="sm" onClick={savePassword} disabled={savingPw}>
+          <Button
+            size="sm"
+            className="w-full sm:w-auto"
+            onClick={savePassword}
+            disabled={savingPw}
+          >
             {savingPw && <Loader2 className="h-4 w-4 animate-spin" />}
             Ganti Password
           </Button>
         </div>
-      </CardContent>
-    </Card>
+      </div>
+    </Section>
   );
 }
 
@@ -274,46 +325,52 @@ function ContentManager() {
     k === "engage" ? "Like/Komen/Repost" : "Sound";
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-base">Konten Saya</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <p className="text-sm text-muted-foreground">
-          Tambahkan link kontenmu. Voter akan memilih konten ini saat
-          mengerjakan quest <strong>Like/Komen/Repost</strong> (engage) dan{" "}
-          <strong>Pakai Sound</strong>.
+    <Section
+      title="Link Konten Aku"
+      desc="Link TikTok/IG kamu untuk quest pendukung"
+      icon={LinkIcon}
+    >
+      <div className="space-y-4">
+        <p className="rounded-lg bg-muted/50 p-3 text-sm text-muted-foreground">
+          Tempel link kontenmu di sini. Nanti pendukung pilih konten ini waktu
+          ngerjain quest <strong>Like/Komen/Repost</strong> atau{" "}
+          <strong>Pakai Sound</strong>. Makin banyak konten, makin banyak poin
+          yang bisa masuk.
         </p>
-        <div className="flex flex-col gap-2 sm:flex-row">
+        <div className="space-y-2">
           <select
-            className="h-9 rounded-md border border-input bg-transparent px-3 text-sm sm:w-48"
+            className="h-10 w-full rounded-md border border-input bg-transparent px-3 text-sm"
             value={kind}
             onChange={(e) => setKind(e.target.value as "engage" | "sound")}
           >
-            <option value="engage">Untuk Like/Komen/Repost</option>
-            <option value="sound">Untuk Sound</option>
+            <option value="engage">Untuk di-Like/Komen/Repost</option>
+            <option value="sound">Untuk dipakai Sound-nya</option>
           </select>
           <Input
             placeholder="https://www.tiktok.com/@kamu/video/..."
             value={url}
             onChange={(e) => setUrl(e.target.value)}
           />
-          <Button onClick={add} disabled={busy} className="shrink-0">
-            {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
-            Tambah
+          <Button onClick={add} disabled={busy} className="w-full">
+            {busy ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Plus className="h-4 w-4" />
+            )}
+            Tambah Link
           </Button>
         </div>
 
         {isLoading ? (
           <LoadingState />
         ) : !contents || contents.length === 0 ? (
-          <EmptyState title="Belum ada konten" />
+          <EmptyState title="Belum ada link konten" />
         ) : (
           <ul className="space-y-2">
             {contents.map((c) => (
               <li
                 key={c.id}
-                className="flex items-center gap-2 rounded-lg border p-2 text-sm"
+                className="flex items-center gap-2 rounded-lg border p-2.5 text-sm"
               >
                 <Badge variant="secondary" className="shrink-0">
                   {kindLabel(c.kind)}
@@ -338,8 +395,8 @@ function ContentManager() {
             ))}
           </ul>
         )}
-      </CardContent>
-    </Card>
+      </div>
+    </Section>
   );
 }
 
@@ -347,20 +404,29 @@ function StatCard({
   icon: Icon,
   label,
   value,
+  tone = "primary",
 }: {
   icon: React.ElementType;
   label: string;
   value: React.ReactNode;
+  tone?: "primary" | "amber" | "emerald";
 }) {
+  const tones = {
+    primary: "bg-primary/10 text-primary",
+    amber: "bg-amber-500/10 text-amber-600",
+    emerald: "bg-emerald-500/10 text-emerald-600",
+  } as const;
   return (
-    <Card>
+    <Card className="overflow-hidden">
       <CardContent className="flex items-center gap-3 p-4">
-        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
-          <Icon className="h-5 w-5 text-primary" />
+        <div
+          className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${tones[tone]}`}
+        >
+          <Icon className="h-5 w-5" />
         </div>
-        <div>
-          <p className="text-xs text-muted-foreground">{label}</p>
-          <p className="text-xl font-bold">{value}</p>
+        <div className="min-w-0">
+          <p className="truncate text-xs text-muted-foreground">{label}</p>
+          <p className="text-2xl font-bold tracking-tight">{value}</p>
         </div>
       </CardContent>
     </Card>
@@ -390,31 +456,50 @@ export default function ParticipantDashboard() {
 
   return (
     <Shell>
-      {/* Identity */}
-      <div className="flex flex-wrap items-center gap-4 rounded-xl border bg-muted/30 p-5">
-        <Avatar className="h-20 w-20 border-2">
-          {me.photo_url && <AvatarImage src={me.photo_url} alt={me.name} />}
-          <AvatarFallback className="text-lg">
-            {me.name.slice(0, 2).toUpperCase()}
-          </AvatarFallback>
-        </Avatar>
-        <div className="min-w-0 flex-1">
-          <h2 className="text-xl font-bold">{me.name}</h2>
-          <p className="text-sm text-muted-foreground">{me.schools?.name}</p>
-          {me.description && (
-            <p className="mt-1 max-w-prose text-sm">{me.description}</p>
-          )}
-        </div>
-        <div className="flex flex-col items-end gap-2">
-          <Badge variant={me.status === "active" ? "success" : "secondary"}>
-            {me.status === "active" ? "Aktif" : "Nonaktif"}
-          </Badge>
-          <ChangePhotoButton
-            onChanged={() =>
-              qc.invalidateQueries({ queryKey: ["participant", "me"] })
-            }
-          />
-          <ContactAdminButton />
+      {/* Hero */}
+      <div className="relative overflow-hidden rounded-2xl border bg-gradient-to-br from-primary via-blue-600 to-blue-700 p-5 text-white shadow-sm sm:p-6">
+        <div className="absolute -right-8 -top-8 h-40 w-40 rounded-full bg-white/10" />
+        <div className="absolute -bottom-10 -left-6 h-32 w-32 rounded-full bg-white/5" />
+        <div className="relative flex flex-col items-center gap-4 text-center sm:flex-row sm:items-center sm:gap-5 sm:text-left">
+          <Avatar className="h-24 w-24 shrink-0 border-4 border-white/30 shadow-lg">
+            {me.photo_url && <AvatarImage src={me.photo_url} alt={me.name} />}
+            <AvatarFallback className="bg-white/20 text-2xl text-white">
+              {me.name.slice(0, 2).toUpperCase()}
+            </AvatarFallback>
+          </Avatar>
+          <div className="min-w-0 flex-1">
+            <div className="mb-1.5 flex flex-wrap items-center justify-center gap-2 sm:justify-start">
+              {rank && (
+                <span className="rounded-full bg-white/20 px-2.5 py-0.5 text-sm font-semibold backdrop-blur">
+                  Peringkat #{rank}
+                </span>
+              )}
+              <span
+                className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${
+                  me.status === "active" ? "bg-emerald-400/30" : "bg-white/20"
+                }`}
+              >
+                {me.status === "active" ? "Aktif" : "Nonaktif"}
+              </span>
+            </div>
+            <h2 className="text-xl font-extrabold leading-tight tracking-tight sm:text-2xl">
+              {me.name}
+            </h2>
+            <p className="text-sm text-white/80">{me.schools?.name}</p>
+            {me.description && (
+              <p className="mt-1 line-clamp-2 text-sm text-white/70">
+                {me.description}
+              </p>
+            )}
+          </div>
+          <div className="flex w-full shrink-0 flex-col gap-2 sm:w-auto [&_a]:w-full [&_a]:justify-center [&_a]:border-white/40 [&_a]:bg-white/10 [&_a]:text-white [&_a:hover]:bg-white/20 [&_button]:w-full [&_button]:justify-center [&_button]:border-white/40 [&_button]:bg-white/10 [&_button]:text-white [&_button:hover]:bg-white/20">
+            <ChangePhotoButton
+              onChanged={() =>
+                qc.invalidateQueries({ queryKey: ["participant", "me"] })
+              }
+            />
+            <ContactAdminButton />
+          </div>
         </div>
       </div>
 
@@ -422,38 +507,34 @@ export default function ParticipantDashboard() {
       <div className="grid gap-4 sm:grid-cols-3">
         <StatCard
           icon={Trophy}
+          tone="amber"
           label="Total Poin"
           value={formatNumber(me.total_points)}
         />
         <StatCard
           icon={Award}
+          tone="primary"
           label="Peringkat"
           value={rank ? `#${rank}` : "—"}
         />
         <StatCard
           icon={Users}
+          tone="emerald"
           label="Total Pendukung"
           value={formatNumber(supporters?.length ?? 0)}
         />
       </div>
 
-      <ParticipantSettings
-        description={me.description ?? ""}
-        onSaved={() => refetch()}
-      />
-
-      <ContentManager />
-
       <div className="grid gap-6 lg:grid-cols-3">
         {/* Growth chart */}
-        <Card className="lg:col-span-2">
+        <Card className="min-w-0 lg:col-span-2">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-base">
               <TrendingUp className="h-5 w-5 text-primary" />
               Perkembangan Poin
             </CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="min-w-0 overflow-hidden">
             {history && history.length > 0 ? (
               <PointGrowthChart data={history} />
             ) : (
@@ -463,7 +544,7 @@ export default function ParticipantDashboard() {
         </Card>
 
         {/* Top supporters */}
-        <Card>
+        <Card className="min-w-0">
           <CardHeader>
             <CardTitle className="text-base">Supporter Terbesar</CardTitle>
           </CardHeader>
@@ -471,16 +552,13 @@ export default function ParticipantDashboard() {
             {topSupporter && (
               <div className="rounded-lg border bg-accent/5 p-3">
                 <p className="text-xs text-muted-foreground">Pendukung utama</p>
-                <p className="font-semibold">
+                <p className="truncate font-semibold">
                   {topSupporter.voter_name}
-                  {voterStatusLabel(topSupporter.voter_status) && (
-                    <span className="font-normal text-muted-foreground">
-                      {" · "}
-                      {voterStatusLabel(topSupporter.voter_status)}
-                    </span>
-                  )}
                 </p>
-                <p className="text-sm text-accent-foreground">
+                <p className="truncate text-xs text-muted-foreground">
+                  {voterStatusLabel(topSupporter.voter_status)}
+                </p>
+                <p className="text-sm font-medium text-accent-foreground">
                   {formatNumber(topSupporter.points)} poin
                 </p>
               </div>
@@ -496,11 +574,10 @@ export default function ParticipantDashboard() {
                       <span className="w-4 shrink-0 text-muted-foreground">
                         {i + 1}.
                       </span>
-                      <span className="truncate">
-                        {s.voter_name}
+                      <span className="min-w-0">
+                        <span className="block truncate">{s.voter_name}</span>
                         {voterStatusLabel(s.voter_status) && (
-                          <span className="text-muted-foreground">
-                            {" · "}
+                          <span className="block truncate text-xs text-muted-foreground">
                             {voterStatusLabel(s.voter_status)}
                           </span>
                         )}
@@ -518,6 +595,13 @@ export default function ParticipantDashboard() {
           </CardContent>
         </Card>
       </div>
+
+      <ContentManager />
+
+      <ParticipantSettings
+        description={me.description ?? ""}
+        onSaved={() => refetch()}
+      />
     </Shell>
   );
 }

@@ -6,6 +6,7 @@ import { ChevronRight } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { CardSkeletonGrid, EmptyState, ErrorState } from "@/components/states";
@@ -13,10 +14,15 @@ import { useParticipants } from "@/lib/queries";
 import { createClient } from "@/lib/supabase/client";
 import { formatNumber } from "@/lib/utils";
 
+const PAGE_SIZE = 20;
+
 export function ParticipantGrid() {
   const { data, isLoading, isError, refetch } = useParticipants();
   const qc = useQueryClient();
   const [search, setSearch] = React.useState("");
+  const [page, setPage] = React.useState(1);
+
+  React.useEffect(() => setPage(1), [search]);
 
   // Realtime: refresh on point changes.
   React.useEffect(() => {
@@ -55,6 +61,10 @@ export function ParticipantGrid() {
       />
     );
 
+  const pageCount = Math.max(1, Math.ceil(list.length / PAGE_SIZE));
+  const current = Math.min(page, pageCount);
+  const paged = list.slice((current - 1) * PAGE_SIZE, current * PAGE_SIZE);
+
   return (
     <div className="space-y-4">
       <Input
@@ -67,7 +77,7 @@ export function ParticipantGrid() {
         <EmptyState title="Tidak ada peserta cocok pencarian" />
       ) : (
         <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
-          {list.map((p) => (
+          {paged.map((p) => (
             <Link key={p.id} href={`/peserta/${p.id}`} className="group">
               <Card className="h-full overflow-hidden transition-shadow group-hover:shadow-md">
                 <div className="relative aspect-square w-full overflow-hidden bg-muted">
@@ -107,6 +117,30 @@ export function ParticipantGrid() {
               </Card>
             </Link>
           ))}
+        </div>
+      )}
+
+      {list.length > PAGE_SIZE && (
+        <div className="flex items-center justify-center gap-3 pt-2">
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={current <= 1}
+            onClick={() => setPage(current - 1)}
+          >
+            Sebelumnya
+          </Button>
+          <span className="text-sm text-muted-foreground">
+            Hal {current} / {pageCount}
+          </span>
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={current >= pageCount}
+            onClick={() => setPage(current + 1)}
+          >
+            Berikutnya
+          </Button>
         </div>
       )}
     </div>

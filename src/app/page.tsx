@@ -1,15 +1,9 @@
 import Link from "next/link";
-import { Award, GraduationCap, Smartphone, Star } from "lucide-react";
+import { GraduationCap } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import { Navbar } from "@/components/navbar";
 import { ParticipantGrid } from "@/components/participant-grid";
-
-const prizes = [
-  { icon: Smartphone, title: "Smartphone", desc: "Untuk peserta dengan dukungan terbanyak." },
-  { icon: Award, title: "Sertifikat", desc: "Penghargaan resmi Universitas STEKOM." },
-  { icon: Star, title: "Duta Teladan STEKOM", desc: "Benefit khusus sebagai Duta Teladan Universitas STEKOM." },
-];
+import { PrizeButtons } from "@/components/prize-buttons";
 
 export default function HomePage() {
   return (
@@ -37,10 +31,10 @@ export default function HomePage() {
           </p>
           <div className="flex flex-wrap justify-center gap-3">
             <Button size="lg" asChild>
-              <a href="#peserta">Lihat Peserta</a>
+              <Link href="/ranking">Peringkat Sementara</Link>
             </Button>
             <Button size="lg" variant="outline" asChild>
-              <Link href="/ranking">Lihat Ranking</Link>
+              <Link href="/top-voter">Top Voter</Link>
             </Button>
           </div>
         </div>
@@ -48,19 +42,7 @@ export default function HomePage() {
 
       {/* Prizes */}
       <section className="container py-12">
-        <div className="grid gap-4 md:grid-cols-3">
-          {prizes.map((p) => (
-            <Card key={p.title} className="text-center">
-              <CardContent className="space-y-2 p-6">
-                <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
-                  <p.icon className="h-6 w-6 text-primary" />
-                </div>
-                <h3 className="font-semibold">{p.title}</h3>
-                <p className="text-sm text-muted-foreground">{p.desc}</p>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+        <PrizeButtons />
       </section>
 
       {/* All participants */}

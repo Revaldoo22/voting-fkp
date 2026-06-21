@@ -49,6 +49,103 @@ export function useMyProfile() {
   });
 }
 
+// --------------------------- Admin voters ---------------------------
+export type AdminVoter = {
+  voter_phone: string;
+  voter_name: string;
+  voter_email: string | null;
+  voter_status: string | null;
+  voter_school: string | null;
+  voter_class: string | null;
+  votes: number;
+  quests: number;
+  points: number;
+  first_seen: string | null;
+  last_seen: string | null;
+};
+
+export function useAdminVoters(filters?: {
+  participantId?: string;
+  from?: string;
+  to?: string;
+}) {
+  const { participantId, from, to } = filters ?? {};
+  return useQuery({
+    queryKey: ["admin-voters", participantId ?? "", from ?? "", to ?? ""],
+    queryFn: async (): Promise<AdminVoter[]> => {
+      const { data, error } = await sb().rpc("admin_voters", {
+        p_participant_id: participantId || null,
+        p_from: from || null,
+        p_to: to || null,
+      });
+      if (error) throw error;
+      return (data ?? []) as AdminVoter[];
+    },
+  });
+}
+
+export type PointLogRow = {
+  kind: "vote" | "quest";
+  source: string;
+  voter_name: string;
+  voter_phone: string;
+  points: number;
+  created_at: string;
+};
+
+/** Detailed log of every point that entered a participant (admin). */
+export function useParticipantPointLog(participantId?: string) {
+  return useQuery({
+    queryKey: ["participant-point-log", participantId],
+    enabled: !!participantId,
+    queryFn: async (): Promise<PointLogRow[]> => {
+      const { data, error } = await sb().rpc("participant_point_log", {
+        p_participant_id: participantId,
+      });
+      if (error) throw error;
+      return (data ?? []) as PointLogRow[];
+    },
+  });
+}
+
+/** Supporters of one participant (admin detail). */
+export function useParticipantSupporters(participantId?: string) {
+  return useQuery({
+    queryKey: ["participant-supporters", participantId],
+    enabled: !!participantId,
+    queryFn: async (): Promise<AdminVoter[]> => {
+      const { data, error } = await sb().rpc("participant_supporters_detail", {
+        p_participant_id: participantId,
+      });
+      if (error) throw error;
+      return (data ?? []) as AdminVoter[];
+    },
+  });
+}
+
+export type VoterDistRow = {
+  participant_id: string;
+  participant_name: string;
+  school_name: string | null;
+  votes: number;
+  quests: number;
+  points: number;
+};
+
+export function useVoterDistribution(phone?: string) {
+  return useQuery({
+    queryKey: ["voter-distribution", phone],
+    enabled: !!phone,
+    queryFn: async (): Promise<VoterDistRow[]> => {
+      const { data, error } = await sb().rpc("voter_distribution", {
+        p_phone: phone,
+      });
+      if (error) throw error;
+      return (data ?? []) as VoterDistRow[];
+    },
+  });
+}
+
 // ----------------------------- Settings -----------------------------
 export function useSettings() {
   return useQuery({

@@ -39,6 +39,7 @@ import {
 import { CheckCircle2, ExternalLink } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { getFingerprint } from "@/lib/fingerprint";
+import { compressImage } from "@/lib/image-compress";
 import { formatNumber } from "@/lib/utils";
 import { voterInfoSchema } from "@/lib/validations";
 import {
@@ -320,11 +321,13 @@ function QuestCard({
           return;
         }
         const supabase = createClient();
-        const ext = file.name.split(".").pop();
-        const path = `${Date.now()}-${Math.round(file.size)}.${ext}`;
+        // Kompres jika gambar (video dilewati otomatis oleh compressImage).
+        const upFile = await compressImage(file);
+        const ext = upFile.name.split(".").pop();
+        const path = `${Date.now()}-${Math.round(upFile.size)}.${ext}`;
         const { error: upErr } = await supabase.storage
           .from("quest-proofs")
-          .upload(path, file, { upsert: false });
+          .upload(path, upFile, { upsert: false });
         if (upErr) {
           toast.error("Gagal mengunggah: " + upErr.message);
           return;

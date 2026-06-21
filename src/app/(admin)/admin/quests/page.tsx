@@ -31,6 +31,7 @@ import { LoadingState, EmptyState, ErrorState } from "@/components/states";
 import { useConfirm } from "@/components/confirm-dialog";
 import { useQuests } from "@/lib/queries";
 import { createClient } from "@/lib/supabase/client";
+import { compressImage } from "@/lib/image-compress";
 import { questSchema, type QuestInput } from "@/lib/validations";
 import type { Quest } from "@/types/database";
 
@@ -99,11 +100,12 @@ export default function AdminQuestsPage() {
     // Upload a new reference image if one was chosen.
     let refImage = values.ref_image || null;
     if (refImageFile) {
-      const ext = refImageFile.name.split(".").pop();
+      const img = await compressImage(refImageFile);
+      const ext = img.name.split(".").pop();
       const path = `quest-ref/${Date.now()}.${ext}`;
       const { error: upErr } = await supabase.storage
         .from("participant-photos")
-        .upload(path, refImageFile, { upsert: true });
+        .upload(path, img, { upsert: true });
       if (upErr) {
         toast.error("Gagal upload gambar referensi: " + upErr.message);
         return;
