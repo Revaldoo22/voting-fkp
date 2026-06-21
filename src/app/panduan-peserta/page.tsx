@@ -30,7 +30,6 @@ type Step = {
   icon: React.ElementType;
   title: string;
   body: React.ReactNode;
-  img: string; // file di /public/panduan/
 };
 
 const steps: Step[] = [
@@ -44,7 +43,6 @@ const steps: Step[] = [
         diberikan panitia. Password ada di lembar data (lihat tombol di bawah).
       </>
     ),
-    img: "/panduan/01-login.png",
   },
   {
     icon: Award,
@@ -55,7 +53,6 @@ const steps: Step[] = [
         dan status kamu. Peringkat dihitung otomatis dari total poin.
       </>
     ),
-    img: "/panduan/02-hero.png",
   },
   {
     icon: Camera,
@@ -66,7 +63,6 @@ const steps: Step[] = [
         memperbarui fotomu. Foto otomatis dikompres agar ringan.
       </>
     ),
-    img: "/panduan/03-ganti-foto.png",
   },
   {
     icon: Trophy,
@@ -78,7 +74,6 @@ const steps: Step[] = [
         orang yang mendukungmu).
       </>
     ),
-    img: "/panduan/04-statistik.png",
   },
   {
     icon: TrendingUp,
@@ -89,7 +84,6 @@ const steps: Step[] = [
         vote harian, vote favorit, dan quest yang disetujui.
       </>
     ),
-    img: "/panduan/05-grafik.png",
   },
   {
     icon: Users,
@@ -100,7 +94,6 @@ const steps: Step[] = [
         klik <strong>Tampilkan semua</strong> untuk melihat seluruh pendukung.
       </>
     ),
-    img: "/panduan/06-supporter.png",
   },
   {
     icon: LinkIcon,
@@ -113,7 +106,6 @@ const steps: Step[] = [
         Link. Makin banyak konten, makin banyak poin yang bisa masuk.
       </>
     ),
-    img: "/panduan/07-konten.png",
   },
   {
     icon: KeyRound,
@@ -124,7 +116,6 @@ const steps: Step[] = [
         di bagian Pengaturan Akun. Gunakan password yang mudah kamu ingat.
       </>
     ),
-    img: "/panduan/08-pengaturan.png",
   },
 ];
 
@@ -162,21 +153,6 @@ export default function PanduanPesertaPage() {
                   <p className="text-sm leading-relaxed text-muted-foreground">
                     {s.body}
                   </p>
-                  {/* Slot gambar — isi file di public/panduan/. Placeholder jika belum ada. */}
-                  <div className="overflow-hidden rounded-lg border bg-muted/30">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={s.img}
-                      alt={s.title}
-                      className="w-full object-contain"
-                      onError={(e) => {
-                        (e.currentTarget.parentElement as HTMLElement).innerHTML =
-                          '<div class="flex flex-col items-center justify-center gap-1 py-10 text-muted-foreground"><span class="text-sm">Gambar belum tersedia</span><span class="text-xs">' +
-                          s.img +
-                          "</span></div>";
-                      }}
-                    />
-                  </div>
                 </CardContent>
               </Card>
             </li>
