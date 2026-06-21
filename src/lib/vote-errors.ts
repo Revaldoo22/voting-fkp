@@ -31,6 +31,9 @@ export function voteErrorMessage(raw: string | undefined | null): string {
   if (code.includes("EVENTCLOSED")) {
     return "Event sedang ditutup. Dukungan belum/tidak bisa diberikan saat ini.";
   }
+  if (code.includes("FAV_LIMIT")) {
+    return "Kamu sudah memilih 10 peserta favorit hari ini. Vote favorit (+20) terbatas 10 peserta per hari.";
+  }
   if (code.includes("IPLIMIT")) {
     return "Terlalu banyak akun memberikan dukungan dari jaringan ini hari ini. Coba lagi besok atau gunakan jaringan lain.";
   }

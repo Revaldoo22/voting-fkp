@@ -3,7 +3,7 @@
 import { MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
-const ADMIN_WA = "6288885555591"; // +62 888-8555-591
+const ADMIN_WA = "6282257425470"; // 082257425470
 const MESSAGE = "Halo Admin Festival Karakter Pelajar, saya butuh bantuan.";
 
 export function ContactAdminButton({

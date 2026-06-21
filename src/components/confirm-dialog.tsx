@@ -48,7 +48,9 @@ export function ConfirmProvider({ children }: { children: React.ReactNode }) {
           <DialogHeader>
             <DialogTitle>{state?.title}</DialogTitle>
             {state?.description && (
-              <DialogDescription>{state.description}</DialogDescription>
+              <DialogDescription className="whitespace-pre-line">
+                {state.description}
+              </DialogDescription>
             )}
           </DialogHeader>
           <DialogFooter className="gap-2 sm:gap-2">

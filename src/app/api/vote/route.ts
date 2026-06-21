@@ -10,6 +10,7 @@ const schema = voterInfoSchema.and(
   z.object({
     participant_id: z.string().uuid(),
     fingerprint: z.string().min(1, "Device tidak dikenali"),
+    kind: z.enum(["daily5", "fav20"]).default("daily5"),
   })
 );
 
@@ -46,6 +47,7 @@ export async function POST(request: Request) {
     // IP soft-limit sementara DINONAKTIFKAN — kirim null agar RPC skip cek IP.
     // Aktifkan lagi: ganti ke ipHashFromRequest(request).
     p_ip_hash: null,
+    p_kind: d.kind,
   });
 
   if (error) {
@@ -53,6 +55,7 @@ export async function POST(request: Request) {
     const status =
       m.includes("ALREADYVOTED") ||
       m.includes("IPLIMIT") ||
+      m.includes("FAV_LIMIT") ||
       m.includes("EVENTCLOSED")
         ? 409
         : 400;

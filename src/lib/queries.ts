@@ -363,12 +363,13 @@ export function useSubmissions(status?: string) {
         } | null;
         quests: { name: string; point: number; proof_type: string } | null;
         participant_contents: { url: string; kind: string } | null;
+        submission_proofs: { url: string }[] | null;
       })[]
     > => {
       let q = sb()
         .from("submissions")
         .select(
-          "*, participants(name, school_id, schools(name)), quests(name, point, proof_type), participant_contents(url, kind)"
+          "*, participants(name, school_id, schools(name)), quests(name, point, proof_type), participant_contents(url, kind), submission_proofs(url)"
         )
         .order("created_at", { ascending: false });
       if (status) q = q.eq("status", status);
@@ -471,17 +472,32 @@ export function useMyRank(participantId?: string) {
   });
 }
 
-export function useTopSupporters(participantId?: string) {
+export function useTopSupporters(participantId?: string, limit = 10) {
   return useQuery({
-    queryKey: ["top-supporters", participantId],
+    queryKey: ["top-supporters", participantId, limit],
     enabled: !!participantId,
     queryFn: async (): Promise<TopSupporter[]> => {
       const { data, error } = await sb().rpc("top_supporters", {
         p_participant_id: participantId,
-        p_limit: 5,
+        p_limit: limit,
       });
       if (error) throw error;
       return data as TopSupporter[];
+    },
+  });
+}
+
+/** True total supporter count (distinct phone) of a participant. */
+export function useSupporterCount(participantId?: string) {
+  return useQuery({
+    queryKey: ["supporter-count", participantId],
+    enabled: !!participantId,
+    queryFn: async (): Promise<number> => {
+      const { data, error } = await sb().rpc("participant_supporter_count", {
+        p_participant_id: participantId,
+      });
+      if (error) throw error;
+      return (data as number) ?? 0;
     },
   });
 }

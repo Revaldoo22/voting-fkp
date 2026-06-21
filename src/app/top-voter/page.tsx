@@ -16,12 +16,12 @@ function RankIcon({ rank }: { rank: number }) {
 }
 
 export default function TopVoterPage() {
-  const { data, isLoading, isError, refetch } = useTopVoters(5);
+  const { data, isLoading, isError, refetch } = useTopVoters(200);
 
   return (
     <div className="min-h-screen">
       <Navbar
-        title="🔥 Top 5 Voter Teraktif"
+        title="🔥 Top Voter Teraktif"
         links={[
           { href: "/", label: "Beranda" },
           { href: "/ranking", label: "Ranking" },
@@ -35,7 +35,7 @@ export default function TopVoterPage() {
             <div className="text-sm">
               <p className="font-semibold">Hadiah Top 5 Voter</p>
               <p className="text-muted-foreground">
-                E-wallet ratusan ribu rupiah + sertifikat penghargaan.
+                Tumbler eksklusif + sertifikat penghargaan.
               </p>
             </div>
           </CardContent>

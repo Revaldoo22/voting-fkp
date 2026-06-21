@@ -9,7 +9,11 @@ const schema = voterInfoSchema.and(
   z.object({
     participant_id: z.string().uuid(),
     quest_id: z.string().uuid(),
-    proof_url: z.string().url("Bukti tidak valid"),
+    proof_urls: z
+      .array(z.string().url("Bukti tidak valid"))
+      .min(1, "Lampirkan minimal 1 bukti")
+      .max(5, "Maksimal 5 bukti"),
+    content_id: z.string().uuid().optional(),
   })
 );
 
@@ -36,13 +40,14 @@ export async function POST(request: Request) {
   const { error } = await service.rpc("record_submission", {
     p_participant_id: d.participant_id,
     p_quest_id: d.quest_id,
-    p_proof_url: d.proof_url,
+    p_proof_urls: d.proof_urls,
     p_name: d.name,
     p_phone: d.phone_number,
     p_email: d.email,
     p_status: d.status,
     p_school: d.school || null,
     p_class: d.class || null,
+    p_content_id: d.content_id ?? null,
   });
 
   if (error) {
@@ -82,6 +87,11 @@ export async function POST(request: Request) {
             "Nomor WhatsApp ini sudah terdaftar dengan nama lain. Gunakan nama yang sama.",
         },
         { status: 409 }
+      );
+    if (m.includes("TOOMANY"))
+      return NextResponse.json(
+        { error: "Maksimal 5 bukti per pengiriman." },
+        { status: 400 }
       );
     if (m.includes("CONTENT_REQUIRED") || m.includes("CONTENT_INVALID"))
       return NextResponse.json(

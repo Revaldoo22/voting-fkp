@@ -109,32 +109,69 @@ export default function AdminSubmissionsPage() {
       ) : (
         <>
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {paged.map((s) => (
+          {paged.map((s) => {
+            const proofs =
+              s.submission_proofs && s.submission_proofs.length > 0
+                ? s.submission_proofs.map((p) => p.url)
+                : [s.proof_url];
+            const main = proofs[0];
+            const isLinkQuest = s.quests?.proof_type === "link";
+            return (
             <Card key={s.id} className="overflow-hidden">
               <div className="flex aspect-video w-full items-center justify-center bg-black/90">
-                {s.quests?.proof_type === "link" ? (
-                  <a
-                    href={s.proof_url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex flex-col items-center gap-2 p-4 text-center text-sm text-white hover:underline"
-                  >
-                    <LinkIcon className="h-8 w-8" />
-                    <span className="break-all">{s.proof_url}</span>
-                    <span className="text-xs text-white/60">Buka link →</span>
-                  </a>
-                ) : isImage(s.proof_url) ? (
+                {isLinkQuest ? (
+                  <div className="flex max-h-full flex-col gap-1 overflow-y-auto p-4 text-center text-sm text-white">
+                    <LinkIcon className="mx-auto h-7 w-7" />
+                    {proofs.map((u, i) => (
+                      <a
+                        key={i}
+                        href={u}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="break-all hover:underline"
+                      >
+                        {i + 1}. {u}
+                      </a>
+                    ))}
+                  </div>
+                ) : isImage(main) ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
-                    src={s.proof_url}
+                    src={main}
                     alt="bukti"
                     className="h-full w-full cursor-zoom-in object-contain"
-                    onClick={() => setPreview(s.proof_url)}
+                    onClick={() => setPreview(main)}
                   />
                 ) : (
-                  <video src={s.proof_url} controls className="h-full w-full" />
+                  <video src={main} controls className="h-full w-full" />
                 )}
               </div>
+              {!isLinkQuest && proofs.length > 1 && (
+                <div className="flex gap-1 overflow-x-auto border-b p-1">
+                  {proofs.map((u, i) =>
+                    isImage(u) ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        key={i}
+                        src={u}
+                        alt={`bukti ${i + 1}`}
+                        className="h-12 w-12 shrink-0 cursor-zoom-in rounded object-cover"
+                        onClick={() => setPreview(u)}
+                      />
+                    ) : (
+                      <a
+                        key={i}
+                        href={u}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex h-12 w-12 shrink-0 items-center justify-center rounded bg-muted text-xs"
+                      >
+                        ▶
+                      </a>
+                    )
+                  )}
+                </div>
+              )}
               <CardContent className="space-y-3 p-4">
                 <div className="flex items-center justify-between">
                   <Badge
@@ -219,7 +256,8 @@ export default function AdminSubmissionsPage() {
                 )}
               </CardContent>
             </Card>
-          ))}
+            );
+          })}
         </div>
 
         {pageCount > 1 && (

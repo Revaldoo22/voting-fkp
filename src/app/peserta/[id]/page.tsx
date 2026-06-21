@@ -8,8 +8,11 @@ import {
   Heart,
   Link as LinkIcon,
   Loader2,
+  Plus,
+  Star,
   Trophy,
   Upload,
+  X,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -47,6 +50,7 @@ import {
   useVoterForm,
   type VoterFormData,
 } from "@/components/voter-form-fields";
+import { useConfirm } from "@/components/confirm-dialog";
 import type { ParticipantWithSchool, Quest } from "@/types/database";
 
 export default function PublicParticipantPage({
@@ -141,13 +145,28 @@ export default function PublicParticipantPage({
                   <p className="text-sm">{participant.description}</p>
                 )}
 
-                <VoteDialog
-                  participantId={id}
-                  participantName={participant.name}
-                  voter={voter}
-                  disabled={eventClosed}
-                  onVoted={() => refetch()}
-                />
+                <div className="grid gap-2 sm:grid-cols-2">
+                  <VoteDialog
+                    kind="daily5"
+                    participantId={id}
+                    participantName={participant.name}
+                    voter={voter}
+                    disabled={eventClosed}
+                    onVoted={() => refetch()}
+                  />
+                  <VoteDialog
+                    kind="fav20"
+                    participantId={id}
+                    participantName={participant.name}
+                    voter={voter}
+                    disabled={eventClosed}
+                    onVoted={() => refetch()}
+                  />
+                </div>
+                <p className="text-center text-xs text-muted-foreground">
+                  Vote harian +5 (semua peserta) · Vote favorit +20 (maks 10
+                  peserta/hari)
+                </p>
               </CardContent>
             </Card>
 
@@ -189,12 +208,14 @@ function validateVoter(data: VoterFormData): string | null {
 }
 
 function VoteDialog({
+  kind,
   participantId,
   participantName,
   voter,
   disabled,
   onVoted,
 }: {
+  kind: "daily5" | "fav20";
   participantId: string;
   participantName: string;
   voter: VoterCtx;
@@ -203,20 +224,37 @@ function VoteDialog({
 }) {
   const [open, setOpen] = React.useState(false);
   const [busy, setBusy] = React.useState(false);
+  const confirm = useConfirm();
+  const isFav = kind === "fav20";
+  const pts = isFav ? 20 : 5;
 
-  async function submit() {
+  function submit() {
     const err = validateVoter(voter.data);
     if (err) {
       toast.error(err);
       return;
     }
+    confirm({
+      title: "Pastikan data kamu benar",
+      description: `Nama: ${voter.data.name}\nNomor WhatsApp: ${voter.data.phone_number}\nEmail: ${voter.data.email}\n\nData ini dipakai panitia untuk menghubungimu jika kamu mendapatkan reward. Pastikan benar — tidak bisa diubah setelah dikirim.`,
+      confirmText: "Saya Yakin, Kirim",
+      onConfirm: doSubmit,
+    });
+  }
+
+  async function doSubmit() {
     setBusy(true);
     try {
       const fingerprint = await getFingerprint();
       const res = await fetch("/api/vote", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...voter.data, participant_id: participantId, fingerprint }),
+        body: JSON.stringify({
+          ...voter.data,
+          participant_id: participantId,
+          fingerprint,
+          kind,
+        }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -224,7 +262,7 @@ function VoteDialog({
         return;
       }
       voter.persist(voter.data);
-      toast.success(`Dukungan +5 untuk ${participantName} berhasil! 🎉`);
+      toast.success(`Dukungan +${pts} untuk ${participantName} berhasil! 🎉`);
       setOpen(false);
       onVoted();
     } finally {
@@ -235,23 +273,34 @@ function VoteDialog({
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button className="w-full" disabled={disabled}>
-          <Heart className="h-4 w-4" />
-          {disabled ? "Event ditutup" : "Dukung (+5)"}
+        <Button
+          className="w-full"
+          variant={isFav ? "accent" : "default"}
+          disabled={disabled}
+        >
+          {isFav ? <Star className="h-4 w-4" /> : <Heart className="h-4 w-4" />}
+          {disabled
+            ? "Event ditutup"
+            : isFav
+            ? "Favorit (+20)"
+            : "Dukung (+5)"}
         </Button>
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Dukung {participantName}</DialogTitle>
+          <DialogTitle>
+            {isFav ? "Jadikan Favorit" : "Dukung"} {participantName}
+          </DialogTitle>
           <DialogDescription>
-            Isi data dirimu untuk memberikan dukungan (+5 poin). 1 dukungan per
-            peserta per hari.
+            {isFav
+              ? "Vote favorit memberi +20 poin. Terbatas 10 peserta per hari, 1x per peserta per hari."
+              : "Vote harian memberi +5 poin. 1x per peserta per hari."}
           </DialogDescription>
         </DialogHeader>
         <VoterFormFields data={voter.data} onChange={voter.setData} />
         <Button onClick={submit} disabled={busy}>
           {busy && <Loader2 className="h-4 w-4 animate-spin" />}
-          Kirim Dukungan
+          Kirim Dukungan (+{pts})
         </Button>
       </DialogContent>
     </Dialog>
@@ -272,11 +321,12 @@ function QuestCard({
   disabled: boolean;
 }) {
   const [open, setOpen] = React.useState(false);
-  const [file, setFile] = React.useState<File | null>(null);
-  const [link, setLink] = React.useState("");
+  const [files, setFiles] = React.useState<File[]>([]);
+  const [links, setLinks] = React.useState<string[]>([""]);
   const [contentId, setContentId] = React.useState("");
   const [busy, setBusy] = React.useState(false);
   const qc = useQueryClient();
+  const confirm = useConfirm();
   const isLink = quest.proof_type === "link";
   const needsContent = !!quest.content_kind;
 
@@ -296,7 +346,7 @@ function QuestCard({
   const doneSet = new Set(doneIds ?? []);
   const remaining = allOptions.filter((c) => !doneSet.has(c.id));
 
-  async function submit() {
+  function submit() {
     const err = validateVoter(voter.data);
     if (err) {
       toast.error(err);
@@ -306,34 +356,54 @@ function QuestCard({
       toast.error("Pilih konten peserta dulu.");
       return;
     }
+    confirm({
+      title: "Pastikan data kamu benar",
+      description: `Nama: ${voter.data.name}\nNomor WhatsApp: ${voter.data.phone_number}\nEmail: ${voter.data.email}\n\nData ini dipakai panitia untuk menghubungimu jika kamu mendapatkan reward. Pastikan benar — tidak bisa diubah setelah dikirim.`,
+      confirmText: "Saya Yakin, Kirim",
+      onConfirm: doSubmit,
+    });
+  }
+
+  async function doSubmit() {
     setBusy(true);
     try {
-      let proofUrl = "";
+      let proofUrls: string[] = [];
       if (isLink) {
-        if (!/^https?:\/\/.+/i.test(link.trim())) {
-          toast.error("Masukkan link postingan yang valid.");
+        const clean = links.map((l) => l.trim()).filter(Boolean);
+        if (clean.length === 0 || clean.some((l) => !/^https?:\/\/.+/i.test(l))) {
+          toast.error("Masukkan link postingan yang valid (mulai http).");
           return;
         }
-        proofUrl = link.trim();
+        proofUrls = clean;
       } else {
-        if (!file) {
-          toast.error("Pilih file bukti dulu.");
+        if (files.length === 0) {
+          toast.error("Pilih minimal 1 file bukti.");
           return;
         }
         const supabase = createClient();
-        // Kompres jika gambar (video dilewati otomatis oleh compressImage).
-        const upFile = await compressImage(file);
-        const ext = upFile.name.split(".").pop();
-        const path = `${Date.now()}-${Math.round(upFile.size)}.${ext}`;
-        const { error: upErr } = await supabase.storage
-          .from("quest-proofs")
-          .upload(path, upFile, { upsert: false });
-        if (upErr) {
-          toast.error("Gagal mengunggah: " + upErr.message);
-          return;
+        for (const f of files) {
+          const upFile = await compressImage(f);
+          const ext = upFile.name.split(".").pop();
+          const path = `${Date.now()}-${Math.round(
+            Math.random() * 1e6
+          )}.${ext}`;
+          const { error: upErr } = await supabase.storage
+            .from("quest-proofs")
+            .upload(path, upFile, { upsert: false });
+          if (upErr) {
+            toast.error("Gagal mengunggah: " + upErr.message);
+            return;
+          }
+          proofUrls.push(
+            supabase.storage.from("quest-proofs").getPublicUrl(path).data
+              .publicUrl
+          );
         }
-        proofUrl = supabase.storage.from("quest-proofs").getPublicUrl(path).data
-          .publicUrl;
+      }
+
+      if (proofUrls.length > 5) {
+        toast.error("Maksimal 5 bukti.");
+        return;
       }
 
       const res = await fetch("/api/submissions", {
@@ -343,7 +413,7 @@ function QuestCard({
           ...voter.data,
           participant_id: participantId,
           quest_id: quest.id,
-          proof_url: proofUrl,
+          proof_urls: proofUrls,
           content_id: needsContent ? contentId : undefined,
         }),
       });
@@ -355,8 +425,8 @@ function QuestCard({
       voter.persist(voter.data);
       toast.success("Bukti terkirim! Akan direview admin sebelum poin masuk.");
       setOpen(false);
-      setFile(null);
-      setLink("");
+      setFiles([]);
+      setLinks([""]);
       setContentId("");
       qc.invalidateQueries({ queryKey: ["done-content"] });
     } finally {
@@ -502,22 +572,62 @@ function QuestCard({
             <VoterFormFields data={voter.data} onChange={voter.setData} />
             {isLink ? (
               <div className="space-y-1.5">
-                <Label>Link Postingan</Label>
-                <Input
-                  type="url"
-                  placeholder="https://www.instagram.com/p/..."
-                  value={link}
-                  onChange={(e) => setLink(e.target.value)}
-                />
+                <Label>Link Postingan (boleh lebih dari 1, maks 5)</Label>
+                {links.map((l, i) => (
+                  <div key={i} className="flex gap-2">
+                    <Input
+                      type="url"
+                      placeholder="https://www.instagram.com/p/..."
+                      value={l}
+                      onChange={(e) =>
+                        setLinks((arr) =>
+                          arr.map((x, j) => (j === i ? e.target.value : x))
+                        )
+                      }
+                    />
+                    {links.length > 1 && (
+                      <Button
+                        type="button"
+                        size="icon"
+                        variant="ghost"
+                        className="shrink-0 text-destructive"
+                        onClick={() =>
+                          setLinks((arr) => arr.filter((_, j) => j !== i))
+                        }
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    )}
+                  </div>
+                ))}
+                {links.length < 5 && (
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    onClick={() => setLinks((arr) => [...arr, ""])}
+                  >
+                    <Plus className="h-4 w-4" /> Tambah link
+                  </Button>
+                )}
               </div>
             ) : (
               <div className="space-y-1.5">
-                <Label>File Bukti (screenshot)</Label>
+                <Label>File Bukti (boleh lebih dari 1, maks 5)</Label>
                 <Input
                   type="file"
                   accept="image/*,video/*"
-                  onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+                  multiple
+                  onChange={(e) =>
+                    setFiles(Array.from(e.target.files ?? []).slice(0, 5))
+                  }
                 />
+                {files.length > 0 && (
+                  <p className="text-xs text-muted-foreground">
+                    {files.length} file dipilih
+                    {files.length > 5 ? " (maks 5)" : ""}
+                  </p>
+                )}
               </div>
             )}
             <Button onClick={submit} disabled={busy}>

@@ -35,6 +35,7 @@ import {
   useMyParticipant,
   useMyRank,
   usePointHistory,
+  useSupporterCount,
   useTopSupporters,
 } from "@/lib/queries";
 import { createClient } from "@/lib/supabase/client";
@@ -438,7 +439,9 @@ export default function ParticipantDashboard() {
   const { data: me, isLoading, isError, refetch } = useMyParticipant();
   const { data: rank } = useMyRank(me?.id);
   const { data: history } = usePointHistory(me?.id);
-  const { data: supporters } = useTopSupporters(me?.id);
+  const { data: supporters } = useTopSupporters(me?.id, 100);
+  const { data: supporterCount } = useSupporterCount(me?.id);
+  const [showAllSupporters, setShowAllSupporters] = React.useState(false);
 
   if (isLoading) return <Shell><LoadingState /></Shell>;
   if (isError) return <Shell><ErrorState onRetry={() => refetch()} /></Shell>;
@@ -521,7 +524,7 @@ export default function ParticipantDashboard() {
           icon={Users}
           tone="emerald"
           label="Total Pendukung"
-          value={formatNumber(supporters?.length ?? 0)}
+          value={formatNumber(supporterCount ?? 0)}
         />
       </div>
 
@@ -547,6 +550,9 @@ export default function ParticipantDashboard() {
         <Card className="min-w-0">
           <CardHeader>
             <CardTitle className="text-base">Supporter Terbesar</CardTitle>
+            <p className="text-xs text-muted-foreground">
+              {formatNumber(supporterCount ?? 0)} total pendukung
+            </p>
           </CardHeader>
           <CardContent className="space-y-3">
             {topSupporter && (
@@ -564,31 +570,51 @@ export default function ParticipantDashboard() {
               </div>
             )}
             {supporters && supporters.length > 0 ? (
-              <ol className="space-y-2">
-                {supporters.map((s, i) => (
-                  <li
-                    key={`${s.voter_name}-${i}`}
-                    className="flex items-center justify-between gap-2 text-sm"
-                  >
-                    <span className="flex min-w-0 items-center gap-2">
-                      <span className="w-4 shrink-0 text-muted-foreground">
-                        {i + 1}.
-                      </span>
-                      <span className="min-w-0">
-                        <span className="block truncate">{s.voter_name}</span>
-                        {voterStatusLabel(s.voter_status) && (
-                          <span className="block truncate text-xs text-muted-foreground">
-                            {voterStatusLabel(s.voter_status)}
+              <>
+                <ol
+                  className={`space-y-2 ${
+                    showAllSupporters ? "max-h-96 overflow-y-auto pr-1" : ""
+                  }`}
+                >
+                  {(showAllSupporters ? supporters : supporters.slice(0, 5)).map(
+                    (s, i) => (
+                      <li
+                        key={`${s.voter_name}-${i}`}
+                        className="flex items-center justify-between gap-2 text-sm"
+                      >
+                        <span className="flex min-w-0 items-center gap-2">
+                          <span className="w-5 shrink-0 text-muted-foreground">
+                            {i + 1}.
                           </span>
-                        )}
-                      </span>
-                    </span>
-                    <span className="shrink-0 font-medium">
-                      {formatNumber(s.points)}
-                    </span>
-                  </li>
-                ))}
-              </ol>
+                          <span className="min-w-0">
+                            <span className="block truncate">{s.voter_name}</span>
+                            {voterStatusLabel(s.voter_status) && (
+                              <span className="block truncate text-xs text-muted-foreground">
+                                {voterStatusLabel(s.voter_status)}
+                              </span>
+                            )}
+                          </span>
+                        </span>
+                        <span className="shrink-0 font-medium">
+                          {formatNumber(s.points)}
+                        </span>
+                      </li>
+                    )
+                  )}
+                </ol>
+                {supporters.length > 5 && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="w-full"
+                    onClick={() => setShowAllSupporters((v) => !v)}
+                  >
+                    {showAllSupporters
+                      ? "Tampilkan lebih sedikit"
+                      : `Tampilkan semua (${formatNumber(supporters.length)})`}
+                  </Button>
+                )}
+              </>
             ) : (
               <EmptyState title="Belum ada pendukung" />
             )}
