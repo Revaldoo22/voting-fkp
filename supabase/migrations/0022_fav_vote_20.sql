@@ -346,6 +346,6 @@ as $$
          coalesce(v.pts, 0) + coalesce(q.pts, 0),
          least(v.first_c, q.first_c), greatest(v.last_c, q.last_c)
   from v full outer join q on q.voter_phone = v.voter_phone
-  order by first_seen desc nulls last;
+  order by least(v.first_c, q.first_c) desc nulls last;
 $$;
 grant execute on function public.admin_voters(uuid, date, date) to authenticated, service_role;

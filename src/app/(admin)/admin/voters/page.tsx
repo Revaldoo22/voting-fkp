@@ -22,7 +22,9 @@ import {
 import { EmptyState, ErrorState, LoadingState } from "@/components/states";
 import {
   useAdminVoters,
+  useAdminVotersCount,
   useParticipants,
+  useSchools,
   useVoterDistribution,
   type AdminVoter,
 } from "@/lib/queries";
@@ -40,65 +42,57 @@ const STATUS_OPTS = [
 ];
 
 export default function AdminVotersPage() {
-  // Server-side filters: participant + date range.
   const [participantId, setParticipantId] = React.useState("");
   const [from, setFrom] = React.useState("");
   const [to, setTo] = React.useState("");
-  // Client-side filters: search + status + school.
   const [search, setSearch] = React.useState("");
   const [statusFilter, setStatusFilter] = React.useState("");
   const [schoolFilter, setSchoolFilter] = React.useState("");
   const [page, setPage] = React.useState(1);
   const [selected, setSelected] = React.useState<AdminVoter | null>(null);
 
-  const { data, isLoading, isError, refetch } = useAdminVoters({
-    participantId,
-    from,
-    to,
-  });
-  const { data: participants } = useParticipants();
+  // Debounce search to avoid a query per keystroke.
+  const [debSearch, setDebSearch] = React.useState("");
+  React.useEffect(() => {
+    const t = setTimeout(() => setDebSearch(search), 350);
+    return () => clearTimeout(t);
+  }, [search]);
 
   React.useEffect(
     () => setPage(1),
-    [search, statusFilter, schoolFilter, participantId, from, to]
+    [debSearch, statusFilter, schoolFilter, participantId, from, to]
   );
 
-  // Distinct schools present in the result for the school dropdown.
-  const schools = React.useMemo(() => {
-    const set = new Set<string>();
-    (data ?? []).forEach((v) => v.voter_school && set.add(v.voter_school));
-    return Array.from(set).sort();
-  }, [data]);
+  const baseFilters = {
+    participantId,
+    from,
+    to,
+    search: debSearch,
+    status: statusFilter,
+    school: schoolFilter,
+  };
 
-  const q = search.trim().toLowerCase();
-  const list = React.useMemo(() => {
-    return (data ?? []).filter((v) => {
-      if (statusFilter && v.voter_status !== statusFilter) return false;
-      if (schoolFilter && v.voter_school !== schoolFilter) return false;
-      if (
-        q &&
-        !(
-          v.voter_name?.toLowerCase().includes(q) ||
-          v.voter_phone?.includes(q) ||
-          v.voter_email?.toLowerCase().includes(q) ||
-          v.voter_school?.toLowerCase().includes(q)
-        )
-      )
-        return false;
-      return true;
-    });
-  }, [data, q, statusFilter, schoolFilter]);
+  const { data: total } = useAdminVotersCount(baseFilters);
+  const { data, isLoading, isError, refetch } = useAdminVoters({
+    ...baseFilters,
+    limit: PAGE_SIZE,
+    offset: (page - 1) * PAGE_SIZE,
+  });
+  const { data: participants } = useParticipants();
+  const { data: schoolList } = useSchools();
 
-  const pageCount = Math.max(1, Math.ceil(list.length / PAGE_SIZE));
+  const schools = (schoolList ?? []).map((s) => s.name);
+  const totalCount = total ?? 0;
+  const pageCount = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
   const current = Math.min(page, pageCount);
-  const paged = list.slice((current - 1) * PAGE_SIZE, current * PAGE_SIZE);
+  const paged = data ?? [];
 
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold">Daftar Voter</h1>
         <p className="text-sm text-muted-foreground">
-          Total {formatNumber(data?.length ?? 0)} voter. Klik baris untuk lihat
+          Total {formatNumber(totalCount)} voter. Klik baris untuk lihat
           distribusi poin.
         </p>
       </div>
@@ -258,7 +252,7 @@ export default function AdminVotersPage() {
             </CardContent>
           </Card>
 
-          {list.length > PAGE_SIZE && (
+          {pageCount > 1 && (
             <div className="flex items-center justify-center gap-3">
               <button
                 className="rounded-md border px-3 py-1 text-sm disabled:opacity-50"

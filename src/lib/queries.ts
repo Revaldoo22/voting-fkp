@@ -64,22 +64,53 @@ export type AdminVoter = {
   last_seen: string | null;
 };
 
-export function useAdminVoters(filters?: {
+export type VoterFilters = {
   participantId?: string;
   from?: string;
   to?: string;
-}) {
-  const { participantId, from, to } = filters ?? {};
+  search?: string;
+  status?: string;
+  school?: string;
+  limit?: number;
+  offset?: number;
+};
+
+function voterRpcArgs(f: VoterFilters) {
+  return {
+    p_participant_id: f.participantId || null,
+    p_from: f.from || null,
+    p_to: f.to || null,
+    p_search: f.search || null,
+    p_status: f.status || null,
+    p_school: f.school || null,
+  };
+}
+
+export function useAdminVoters(filters: VoterFilters) {
   return useQuery({
-    queryKey: ["admin-voters", participantId ?? "", from ?? "", to ?? ""],
+    queryKey: ["admin-voters", filters],
     queryFn: async (): Promise<AdminVoter[]> => {
       const { data, error } = await sb().rpc("admin_voters", {
-        p_participant_id: participantId || null,
-        p_from: from || null,
-        p_to: to || null,
+        ...voterRpcArgs(filters),
+        p_limit: filters.limit ?? 25,
+        p_offset: filters.offset ?? 0,
       });
       if (error) throw error;
       return (data ?? []) as AdminVoter[];
+    },
+  });
+}
+
+export function useAdminVotersCount(filters: VoterFilters) {
+  return useQuery({
+    queryKey: ["admin-voters-count", { ...filters, limit: 0, offset: 0 }],
+    queryFn: async (): Promise<number> => {
+      const { data, error } = await sb().rpc(
+        "admin_voters_count",
+        voterRpcArgs(filters)
+      );
+      if (error) throw error;
+      return (data as number) ?? 0;
     },
   });
 }
@@ -119,6 +150,68 @@ export function useParticipantSupporters(participantId?: string) {
       });
       if (error) throw error;
       return (data ?? []) as AdminVoter[];
+    },
+  });
+}
+
+export type ActivityLogRow = {
+  kind: "daily5" | "fav20" | "quest";
+  source: string;
+  voter_name: string;
+  voter_phone: string;
+  participant_name: string;
+  points: number;
+  status: string;
+  created_at: string;
+};
+
+export type ActivityFilters = {
+  kind?: string;
+  participantId?: string;
+  from?: string;
+  to?: string;
+  search?: string;
+  qstatus?: string;
+  limit?: number;
+  offset?: number;
+};
+
+function actRpcArgs(f: ActivityFilters) {
+  return {
+    p_kind: f.kind || "all",
+    p_participant_id: f.participantId || null,
+    p_from: f.from || null,
+    p_to: f.to || null,
+    p_search: f.search || null,
+    p_qstatus: f.qstatus || null,
+  };
+}
+
+export function useActivityLog(filters: ActivityFilters) {
+  return useQuery({
+    queryKey: ["activity-log", filters],
+    queryFn: async (): Promise<ActivityLogRow[]> => {
+      const { data, error } = await sb().rpc("admin_activity_log", {
+        ...actRpcArgs(filters),
+        p_limit: filters.limit ?? 30,
+        p_offset: filters.offset ?? 0,
+      });
+      if (error) throw error;
+      return (data ?? []) as ActivityLogRow[];
+    },
+  });
+}
+
+export function useActivityLogCount(filters: ActivityFilters) {
+  return useQuery({
+    queryKey: ["activity-log-count", { ...filters, limit: 0, offset: 0 }],
+    queryFn: async (): Promise<number> => {
+      const { data, error } = await sb().rpc(
+        "admin_activity_log_count",
+        actRpcArgs(filters)
+      );
+      if (error) throw error;
+      return (data as number) ?? 0;
     },
   });
 }
