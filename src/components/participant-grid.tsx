@@ -6,7 +6,7 @@ import { ChevronRight } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { CardSkeletonGrid, EmptyState, ErrorState } from "@/components/states";
 import { useParticipants } from "@/lib/queries";
@@ -66,11 +66,11 @@ export function ParticipantGrid() {
       {list.length === 0 ? (
         <EmptyState title="Tidak ada peserta cocok pencarian" />
       ) : (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
           {list.map((p) => (
             <Link key={p.id} href={`/peserta/${p.id}`} className="group">
               <Card className="h-full overflow-hidden transition-shadow group-hover:shadow-md">
-                <div className="aspect-square w-full overflow-hidden bg-muted">
+                <div className="relative aspect-square w-full overflow-hidden bg-muted">
                   {p.photo_url ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img
@@ -80,29 +80,28 @@ export function ParticipantGrid() {
                     />
                   ) : (
                     <div className="flex h-full items-center justify-center">
-                      <Avatar className="h-20 w-20">
-                        <AvatarFallback className="text-xl">
+                      <Avatar className="h-14 w-14">
+                        <AvatarFallback>
                           {p.name.slice(0, 2).toUpperCase()}
                         </AvatarFallback>
                       </Avatar>
                     </div>
                   )}
+                  <Badge
+                    variant="accent"
+                    className="absolute right-1.5 top-1.5 shadow"
+                  >
+                    {formatNumber(p.total_points)}
+                  </Badge>
                 </div>
-                <CardHeader className="pb-2">
-                  <CardTitle className="flex items-center justify-between gap-2 text-base">
-                    <span className="truncate">{p.name}</span>
-                    <Badge variant="accent" className="shrink-0">
-                      {formatNumber(p.total_points)}
-                    </Badge>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
+                <CardContent className="p-3">
+                  <p className="truncate text-sm font-semibold">{p.name}</p>
                   <p className="truncate text-xs text-muted-foreground">
                     {p.schools?.name ?? "—"}
                   </p>
-                  <div className="mt-2 flex items-center justify-end text-sm font-medium text-primary">
+                  <div className="mt-1.5 flex items-center justify-end text-xs font-medium text-primary">
                     Dukung
-                    <ChevronRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+                    <ChevronRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-1" />
                   </div>
                 </CardContent>
               </Card>

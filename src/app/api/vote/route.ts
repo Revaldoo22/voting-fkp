@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { createServiceSupabase } from "@/lib/supabase/server";
-import { ipHashFromRequest, serverHashFromHeaders } from "@/lib/server-hash";
+import { serverHashFromHeaders } from "@/lib/server-hash";
 import { rateLimit } from "@/lib/rate-limit";
 import { voterInfoSchema } from "@/lib/validations";
 import { voteErrorMessage } from "@/lib/vote-errors";
@@ -43,7 +43,9 @@ export async function POST(request: Request) {
     p_school: d.school || null,
     p_class: d.class || null,
     p_server_hash: serverHashFromHeaders(request.headers),
-    p_ip_hash: ipHashFromRequest(request),
+    // IP soft-limit sementara DINONAKTIFKAN — kirim null agar RPC skip cek IP.
+    // Aktifkan lagi: ganti ke ipHashFromRequest(request).
+    p_ip_hash: null,
   });
 
   if (error) {
