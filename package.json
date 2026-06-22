@@ -11,7 +11,8 @@
     "seed:dummy": "node scripts/seed-dummy.mjs",
     "compress:photos": "node scripts/compress-photos.mjs",
     "backup": "node scripts/backup-db.mjs",
-    "backup:storage": "node scripts/backup-storage.mjs"
+    "backup:storage": "node scripts/backup-storage.mjs",
+    "restore:storage": "node scripts/restore-storage.mjs"
   },
   "dependencies": {
     "@fingerprintjs/fingerprintjs": "^4.5.1",

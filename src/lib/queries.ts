@@ -461,16 +461,50 @@ export function useSubmissions(status?: string) {
         submission_proofs: { url: string }[] | null;
       })[]
     > => {
-      let q = sb()
-        .from("submissions")
-        .select(
-          "*, participants(name, school_id, schools(name)), quests(name, point, proof_type), participant_contents(url, kind), submission_proofs(url)"
-        )
-        .order("created_at", { ascending: false });
-      if (status) q = q.eq("status", status);
-      const { data, error } = await q;
-      if (error) throw error;
-      return data as never;
+      // Supabase batasi max 1000 baris/response (max-rows server-side yang
+      // mengalahkan .range besar). Submission pending bisa >1000, jadi ambil
+      // berhalaman (chunk) sampai habis.
+      const CHUNK = 1000;
+      const sel =
+        "*, participants(name, school_id, schools(name)), quests(name, point, proof_type), participant_contents(url, kind), submission_proofs(url)";
+      const out: unknown[] = [];
+      for (let from = 0; ; from += CHUNK) {
+        let q = sb()
+          .from("submissions")
+          .select(sel)
+          .order("created_at", { ascending: false })
+          .range(from, from + CHUNK - 1);
+        if (status) q = q.eq("status", status);
+        const { data, error } = await q;
+        if (error) throw error;
+        out.push(...(data ?? []));
+        if (!data || data.length < CHUNK) break;
+      }
+      return out as never;
+    },
+  });
+}
+
+export function useSubmissionCounts() {
+  return useQuery({
+    queryKey: ["submissions", "counts"],
+    queryFn: async () => {
+      const count = async (status?: string) => {
+        let q = sb()
+          .from("submissions")
+          .select("id", { count: "exact", head: true });
+        if (status) q = q.eq("status", status);
+        const { count: c, error } = await q;
+        if (error) throw error;
+        return c ?? 0;
+      };
+      const [pending, approved, rejected, all] = await Promise.all([
+        count("pending"),
+        count("approved"),
+        count("rejected"),
+        count(),
+      ]);
+      return { pending, approved, rejected, all };
     },
   });
 }

@@ -22,7 +22,11 @@ import {
   EmptyState,
   ErrorState,
 } from "@/components/states";
-import { useReviewSubmission, useSubmissions } from "@/lib/queries";
+import {
+  useReviewSubmission,
+  useSubmissionCounts,
+  useSubmissions,
+} from "@/lib/queries";
 
 const isImage = (url: string) => /\.(png|jpe?g|webp|gif|avif)$/i.test(url);
 const PAGE_SIZE = 12;
@@ -37,6 +41,7 @@ export default function AdminSubmissionsPage() {
   const { data, isLoading, isError, refetch } = useSubmissions(
     tab === "all" ? undefined : tab
   );
+  const { data: counts } = useSubmissionCounts();
   const review = useReviewSubmission();
 
   React.useEffect(() => setPage(1), [tab, search]);
@@ -83,14 +88,30 @@ export default function AdminSubmissionsPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold">Verifikasi Submission Quest</h1>
+      <div className="flex flex-wrap items-baseline justify-between gap-2">
+        <h1 className="text-2xl font-bold">Verifikasi Submission Quest</h1>
+        {counts && (
+          <p className="text-sm text-muted-foreground">
+            Sisa pending: <span className="font-semibold text-foreground">{counts.pending}</span>
+            {" · "}disetujui {counts.approved} · ditolak {counts.rejected}
+          </p>
+        )}
+      </div>
 
       <Tabs value={tab} onValueChange={setTab}>
         <TabsList>
-          <TabsTrigger value="pending">Pending</TabsTrigger>
-          <TabsTrigger value="approved">Disetujui</TabsTrigger>
-          <TabsTrigger value="rejected">Ditolak</TabsTrigger>
-          <TabsTrigger value="all">Semua</TabsTrigger>
+          <TabsTrigger value="pending">
+            Pending{counts ? ` (${counts.pending})` : ""}
+          </TabsTrigger>
+          <TabsTrigger value="approved">
+            Disetujui{counts ? ` (${counts.approved})` : ""}
+          </TabsTrigger>
+          <TabsTrigger value="rejected">
+            Ditolak{counts ? ` (${counts.rejected})` : ""}
+          </TabsTrigger>
+          <TabsTrigger value="all">
+            Semua{counts ? ` (${counts.all})` : ""}
+          </TabsTrigger>
         </TabsList>
       </Tabs>
 
