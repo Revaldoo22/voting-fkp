@@ -4,10 +4,12 @@ import { Button } from "@/components/ui/button";
 import { Navbar } from "@/components/navbar";
 import { ParticipantGrid } from "@/components/participant-grid";
 import { PrizeButtons } from "@/components/prize-buttons";
+import { MaintenanceOverlay } from "@/components/maintenance-overlay";
 
 export default function HomePage() {
   return (
     <div className="min-h-screen">
+      <MaintenanceOverlay />
       <Navbar
         links={[
           { href: "/ranking", label: "Ranking" },
