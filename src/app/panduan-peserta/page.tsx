@@ -3,7 +3,6 @@ import Link from "next/link";
 import {
   Award,
   Camera,
-  FileSpreadsheet,
   KeyRound,
   Link as LinkIcon,
   ListChecks,
@@ -15,16 +14,13 @@ import {
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Navbar } from "@/components/navbar";
+import { PasswordLookup } from "./password-lookup";
 
 export const metadata: Metadata = {
   title: "Panduan Peserta — Festival Karakter Pelajar STEKOM",
   description:
     "Panduan penggunaan dashboard peserta: poin, peringkat, supporter, konten, dan pengaturan akun.",
 };
-
-// Spreadsheet data login peserta (nama + password).
-const DATA_URL =
-  "https://docs.google.com/spreadsheets/d/1M2zcUqQTMNTJJa7wpO9ProXavQKNfqzv9bU58F4m054/edit?gid=43129510#gid=43129510";
 
 type Step = {
   icon: React.ElementType;
@@ -162,19 +158,13 @@ export default function PanduanPesertaPage() {
         {/* CTA */}
         <Card className="border-2 border-primary/30 bg-primary/5">
           <CardContent className="space-y-4 p-6 text-center">
-            <h2 className="text-xl font-bold">Siap Masuk?</h2>
+            <h2 className="text-xl font-bold">Cari Password Kamu</h2>
             <p className="text-sm text-muted-foreground">
-              Lihat nama &amp; password akunmu di lembar data, lalu masuk ke
-              dashboard.
+              Ketik namamu untuk melihat password akun, lalu masuk ke dashboard.
             </p>
-            <div className="flex flex-col justify-center gap-3 sm:flex-row">
-              <Button asChild variant="outline" className="sm:w-auto">
-                <a href={DATA_URL} target="_blank" rel="noopener noreferrer">
-                  <FileSpreadsheet className="h-4 w-4" /> Lihat Data &amp;
-                  Password
-                </a>
-              </Button>
-              <Button asChild className="sm:w-auto">
+            <PasswordLookup />
+            <div className="border-t pt-4">
+              <Button asChild className="w-full sm:w-auto">
                 <Link href="/login/peserta">
                   <LogIn className="h-4 w-4" /> Login Peserta
                 </Link>

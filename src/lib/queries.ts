@@ -73,6 +73,7 @@ export type VoterFilters = {
   school?: string;
   limit?: number;
   offset?: number;
+  sort?: "recent" | "points_desc" | "points_asc";
 };
 
 function voterRpcArgs(f: VoterFilters) {
@@ -94,6 +95,7 @@ export function useAdminVoters(filters: VoterFilters) {
         ...voterRpcArgs(filters),
         p_limit: filters.limit ?? 25,
         p_offset: filters.offset ?? 0,
+        p_sort: filters.sort ?? "recent",
       });
       if (error) throw error;
       return (data ?? []) as AdminVoter[];

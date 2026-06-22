@@ -5,8 +5,10 @@ import {
   Award,
   Camera,
   ChevronDown,
+  Heart,
   Link as LinkIcon,
   Loader2,
+  Music,
   Plus,
   Settings,
   TrendingUp,
@@ -21,6 +23,13 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -339,14 +348,28 @@ function ContentManager() {
           yang bisa masuk.
         </p>
         <div className="space-y-2">
-          <select
-            className="h-10 w-full rounded-md border border-input bg-transparent px-3 text-sm"
+          <Select
             value={kind}
-            onChange={(e) => setKind(e.target.value as "engage" | "sound")}
+            onValueChange={(v) => setKind(v as "engage" | "sound")}
           >
-            <option value="engage">Untuk di-Like/Komen/Repost</option>
-            <option value="sound">Untuk dipakai Sound-nya</option>
-          </select>
+            <SelectTrigger className="h-10">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="engage">
+                <span className="flex items-center gap-2">
+                  <Heart className="h-4 w-4 text-primary" />
+                  Untuk di-Like/Komen/Repost
+                </span>
+              </SelectItem>
+              <SelectItem value="sound">
+                <span className="flex items-center gap-2">
+                  <Music className="h-4 w-4 text-accent" />
+                  Untuk dipakai Sound-nya
+                </span>
+              </SelectItem>
+            </SelectContent>
+          </Select>
           <Input
             placeholder="https://www.tiktok.com/@kamu/video/..."
             value={url}

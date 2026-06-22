@@ -43,7 +43,9 @@ export function ParticipantGrid() {
   if (isLoading) return <CardSkeletonGrid />;
   if (isError) return <ErrorState onRetry={() => refetch()} />;
 
-  const active = (data ?? []).filter((p) => p.status === "active");
+  const active = (data ?? [])
+    .filter((p) => p.status === "active")
+    .sort((a, b) => a.name.localeCompare(b.name, "id"));
   const q = search.trim().toLowerCase();
   const list = q
     ? active.filter(

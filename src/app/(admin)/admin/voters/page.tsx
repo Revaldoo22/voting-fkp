@@ -48,6 +48,9 @@ export default function AdminVotersPage() {
   const [search, setSearch] = React.useState("");
   const [statusFilter, setStatusFilter] = React.useState("");
   const [schoolFilter, setSchoolFilter] = React.useState("");
+  const [sort, setSort] = React.useState<
+    "recent" | "points_desc" | "points_asc"
+  >("recent");
   const [page, setPage] = React.useState(1);
   const [selected, setSelected] = React.useState<AdminVoter | null>(null);
 
@@ -60,7 +63,7 @@ export default function AdminVotersPage() {
 
   React.useEffect(
     () => setPage(1),
-    [debSearch, statusFilter, schoolFilter, participantId, from, to]
+    [debSearch, statusFilter, schoolFilter, participantId, from, to, sort]
   );
 
   const baseFilters = {
@@ -75,6 +78,7 @@ export default function AdminVotersPage() {
   const { data: total } = useAdminVotersCount(baseFilters);
   const { data, isLoading, isError, refetch } = useAdminVoters({
     ...baseFilters,
+    sort,
     limit: PAGE_SIZE,
     offset: (page - 1) * PAGE_SIZE,
   });
@@ -147,6 +151,20 @@ export default function AdminVotersPage() {
                 {s}
               </option>
             ))}
+          </select>
+        </div>
+        <div className="space-y-1">
+          <span className="text-xs text-muted-foreground">Urutkan</span>
+          <select
+            className={`${selectCls} w-full sm:w-48`}
+            value={sort}
+            onChange={(e) =>
+              setSort(e.target.value as typeof sort)
+            }
+          >
+            <option value="recent">Terbaru bergabung</option>
+            <option value="points_desc">Poin tertinggi</option>
+            <option value="points_asc">Poin terendah</option>
           </select>
         </div>
         <div className="space-y-1">

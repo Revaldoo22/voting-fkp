@@ -62,23 +62,36 @@ export default function AdminParticipantsPage() {
   const [schoolText, setSchoolText] = React.useState("");
   const [status, setStatus] = React.useState<"active" | "inactive">("active");
   const [search, setSearch] = React.useState("");
+  const [sort, setSort] = React.useState<"name" | "points_desc" | "points_asc">(
+    "points_desc"
+  );
   const [page, setPage] = React.useState(1);
   const PAGE_SIZE = 15;
 
   const filtered = React.useMemo(() => {
     const q = search.trim().toLowerCase();
-    const list = participants ?? [];
-    if (!q) return list;
-    return list.filter(
-      (p) =>
-        p.name.toLowerCase().includes(q) ||
-        p.schools?.name?.toLowerCase().includes(q) ||
-        p.profiles?.phone_number?.includes(q)
+    let list = participants ?? [];
+    if (q) {
+      list = list.filter(
+        (p) =>
+          p.name.toLowerCase().includes(q) ||
+          p.schools?.name?.toLowerCase().includes(q) ||
+          p.profiles?.phone_number?.includes(q)
+      );
+    }
+    const arr = [...list];
+    arr.sort((a, b) =>
+      sort === "name"
+        ? a.name.localeCompare(b.name, "id")
+        : sort === "points_asc"
+        ? a.total_points - b.total_points
+        : b.total_points - a.total_points
     );
-  }, [participants, search]);
+    return arr;
+  }, [participants, search, sort]);
   const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const paged = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
-  React.useEffect(() => setPage(1), [search]);
+  React.useEffect(() => setPage(1), [search, sort]);
 
   // Password dialog (admin sets a participant's password).
   const [pwTarget, setPwTarget] = React.useState<ParticipantWithSchool | null>(
@@ -289,12 +302,23 @@ export default function AdminParticipantsPage() {
         </Button>
       </div>
 
-      <Input
-        placeholder="Cari nama peserta, sekolah, atau nomor WA..."
-        value={search}
-        onChange={(e) => setSearch(e.target.value)}
-        className="max-w-sm"
-      />
+      <div className="flex flex-wrap items-center gap-2">
+        <Input
+          placeholder="Cari nama peserta, sekolah, atau nomor WA..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="w-full sm:max-w-sm"
+        />
+        <select
+          className={selectCls + " w-full sm:w-48"}
+          value={sort}
+          onChange={(e) => setSort(e.target.value as typeof sort)}
+        >
+          <option value="points_desc">Poin tertinggi</option>
+          <option value="points_asc">Poin terendah</option>
+          <option value="name">Nama A-Z</option>
+        </select>
+      </div>
 
       {isLoading ? (
         <CardSkeletonGrid />

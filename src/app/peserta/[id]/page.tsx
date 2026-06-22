@@ -618,15 +618,48 @@ function QuestCard({
                   type="file"
                   accept="image/*,video/*"
                   multiple
-                  onChange={(e) =>
-                    setFiles(Array.from(e.target.files ?? []).slice(0, 5))
-                  }
+                  disabled={files.length >= 5}
+                  onChange={(e) => {
+                    const picked = Array.from(e.target.files ?? []);
+                    setFiles((prev) => {
+                      const merged = [...prev];
+                      for (const f of picked) {
+                        if (
+                          merged.length < 5 &&
+                          !merged.some(
+                            (x) => x.name === f.name && x.size === f.size
+                          )
+                        )
+                          merged.push(f);
+                      }
+                      return merged;
+                    });
+                    e.target.value = ""; // reset agar bisa pilih lagi / file sama
+                  }}
                 />
                 {files.length > 0 && (
-                  <p className="text-xs text-muted-foreground">
-                    {files.length} file dipilih
-                    {files.length > 5 ? " (maks 5)" : ""}
-                  </p>
+                  <ul className="space-y-1">
+                    {files.map((f, i) => (
+                      <li
+                        key={i}
+                        className="flex items-center justify-between gap-2 rounded-md border px-2 py-1 text-xs"
+                      >
+                        <span className="min-w-0 truncate">{f.name}</span>
+                        <button
+                          type="button"
+                          className="shrink-0 text-destructive"
+                          onClick={() =>
+                            setFiles((prev) => prev.filter((_, j) => j !== i))
+                          }
+                        >
+                          <X className="h-3.5 w-3.5" />
+                        </button>
+                      </li>
+                    ))}
+                    <li className="text-xs text-muted-foreground">
+                      {files.length}/5 file
+                    </li>
+                  </ul>
                 )}
               </div>
             )}
