@@ -47,8 +47,8 @@ export function PasswordLookup() {
   }
 
   function copy(r: Row) {
-    navigator.clipboard.writeText(`Nama: ${r.name}\nPassword: ${r.password}`);
-    toast.success("Disalin.");
+    navigator.clipboard.writeText(r.password);
+    toast.success("Password disalin.");
   }
 
   return (
