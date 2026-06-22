@@ -14,6 +14,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Navbar } from "@/components/navbar";
+import { ContactAdminButton } from "@/components/contact-admin";
 import { PasswordLookup } from "./password-lookup";
 
 export const metadata: Metadata = {
@@ -163,8 +164,16 @@ export default function PanduanPesertaPage() {
               Ketik namamu untuk melihat password akun, lalu masuk ke dashboard.
             </p>
             <PasswordLookup />
-            <div className="border-t pt-4">
-              <Button asChild className="w-full sm:w-auto">
+            <p className="text-xs text-muted-foreground">
+              Tidak ketemu atau lupa password? Hubungi panitia.
+            </p>
+            <div className="flex flex-col justify-center gap-3 border-t pt-4 sm:flex-row">
+              <ContactAdminButton
+                size="default"
+                label="Minta Password ke Admin"
+                message="Halo Admin Festival Karakter Pelajar, saya peserta dan ingin meminta/menanyakan password akun saya. Nama saya: "
+              />
+              <Button asChild>
                 <Link href="/login/peserta">
                   <LogIn className="h-4 w-4" /> Login Peserta
                 </Link>
