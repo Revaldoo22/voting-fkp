@@ -1,8 +1,8 @@
-backups
-.next
-node_modules
-.git
-.claude
-supabase
-scripts
+/backups
+/.next
+/node_modules
+/.git
+/.claude
+/supabase
+/scripts
 *.log
