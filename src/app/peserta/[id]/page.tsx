@@ -9,6 +9,7 @@ import {
   Link as LinkIcon,
   Loader2,
   Plus,
+  Share2,
   Star,
   Trophy,
   Upload,
@@ -145,6 +146,8 @@ export default function PublicParticipantPage({
                   <p className="text-sm">{participant.description}</p>
                 )}
 
+                <ShareButton name={participant.name} />
+
                 <div className="grid gap-2 sm:grid-cols-2">
                   <VoteDialog
                     kind="daily5"
@@ -205,6 +208,33 @@ type VoterCtx = ReturnType<typeof useVoterForm>;
 function validateVoter(data: VoterFormData): string | null {
   const r = voterInfoSchema.safeParse(data);
   return r.success ? null : r.error.issues[0]?.message ?? "Data tidak lengkap";
+}
+
+function ShareButton({ name }: { name: string }) {
+  async function share() {
+    const url = typeof window !== "undefined" ? window.location.href : "";
+    const text = `Dukung ${name} di Festival Karakter Pelajar STEKOM! 🔥`;
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: name, text, url });
+        return;
+      } catch {
+        return; // user batal — jangan tampilkan error
+      }
+    }
+    try {
+      await navigator.clipboard.writeText(`${text}\n${url}`);
+      toast.success("Link disalin! Bagikan ke teman-temanmu.");
+    } catch {
+      toast.error("Gagal menyalin link.");
+    }
+  }
+
+  return (
+    <Button variant="outline" className="w-full" onClick={share}>
+      <Share2 className="h-4 w-4" /> Bagikan Profil
+    </Button>
+  );
 }
 
 function VoteDialog({

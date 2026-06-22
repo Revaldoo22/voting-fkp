@@ -165,7 +165,7 @@ export default function PanduanPesertaPage() {
             </p>
             <PasswordLookup />
             <p className="text-xs text-muted-foreground">
-              Tidak ketemu atau lupa password? Hubungi panitia.
+              Error? Hubungi admin untuk konfirmasi.
             </p>
             <div className="flex flex-col justify-center gap-3 border-t pt-4 sm:flex-row">
               <ContactAdminButton
