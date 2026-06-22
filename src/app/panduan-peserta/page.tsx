@@ -164,14 +164,11 @@ export default function PanduanPesertaPage() {
               Ketik namamu untuk melihat password akun, lalu masuk ke dashboard.
             </p>
             <PasswordLookup />
-            <p className="text-xs text-muted-foreground">
-              Error? Hubungi admin untuk konfirmasi.
-            </p>
             <div className="flex flex-col justify-center gap-3 border-t pt-4 sm:flex-row">
               <ContactAdminButton
                 size="default"
-                label="Minta Password ke Admin"
-                message="Halo Admin Festival Karakter Pelajar, saya peserta dan ingin meminta/menanyakan password akun saya. Nama saya: "
+                label="Error? Hubungi Admin"
+                message="Halo Admin Festival Karakter Pelajar, saya peserta dan butuh konfirmasi/password akun saya. Nama saya: "
               />
               <Button asChild>
                 <Link href="/login/peserta">
