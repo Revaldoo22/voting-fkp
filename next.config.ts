@@ -11,6 +11,8 @@ const supabaseHost = (() => {
 })();
 
 const nextConfig: NextConfig = {
+  // Lockfile project ini = root (cegah Next salah pilih lockfile di home dir).
+  outputFileTracingRoot: __dirname,
   images: {
     remotePatterns: supabaseHost
       ? [{ protocol: "https", hostname: supabaseHost }]

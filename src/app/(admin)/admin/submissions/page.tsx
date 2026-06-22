@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import Image from "next/image";
 import { Check, Link as LinkIcon, Loader2, X } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
@@ -118,7 +119,7 @@ export default function AdminSubmissionsPage() {
             const isLinkQuest = s.quests?.proof_type === "link";
             return (
             <Card key={s.id} className="overflow-hidden">
-              <div className="flex aspect-video w-full items-center justify-center bg-black/90">
+              <div className="relative flex aspect-video w-full items-center justify-center bg-black/90">
                 {isLinkQuest ? (
                   <div className="flex max-h-full flex-col gap-1 overflow-y-auto p-4 text-center text-sm text-white">
                     <LinkIcon className="mx-auto h-7 w-7" />
@@ -135,11 +136,12 @@ export default function AdminSubmissionsPage() {
                     ))}
                   </div>
                 ) : isImage(main) ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
+                  <Image
                     src={main}
                     alt="bukti"
-                    className="h-full w-full cursor-zoom-in object-contain"
+                    fill
+                    sizes="(max-width:1024px) 50vw, 33vw"
+                    className="cursor-zoom-in object-contain"
                     onClick={() => setPreview(main)}
                   />
                 ) : (
@@ -150,11 +152,12 @@ export default function AdminSubmissionsPage() {
                 <div className="flex gap-1 overflow-x-auto border-b p-1">
                   {proofs.map((u, i) =>
                     isImage(u) ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img
+                      <Image
                         key={i}
                         src={u}
                         alt={`bukti ${i + 1}`}
+                        width={48}
+                        height={48}
                         className="h-12 w-12 shrink-0 cursor-zoom-in rounded object-cover"
                         onClick={() => setPreview(u)}
                       />

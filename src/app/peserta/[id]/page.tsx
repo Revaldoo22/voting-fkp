@@ -3,6 +3,7 @@
 import * as React from "react";
 import { use } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import {
   ArrowLeft,
   Heart,
@@ -113,12 +114,13 @@ export default function PublicParticipantPage({
           <>
             <Card className="overflow-hidden">
               {participant.photo_url && (
-                <div className="aspect-video w-full overflow-hidden bg-muted">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
+                <div className="relative aspect-video w-full overflow-hidden bg-muted">
+                  <Image
                     src={participant.photo_url}
                     alt={participant.name}
-                    className="h-full w-full object-cover"
+                    fill
+                    sizes="(max-width:768px) 100vw, 768px"
+                    className="object-cover"
                   />
                 </div>
               )}
@@ -480,11 +482,13 @@ function QuestCard({
           {quest.description || "Selesaikan quest untuk poin tambahan."}
         </p>
         {quest.ref_image && (
-          // eslint-disable-next-line @next/next/no-img-element
           <a href={quest.ref_image} target="_blank" rel="noopener noreferrer">
-            <img
+            <Image
               src={quest.ref_image}
               alt="Referensi"
+              width={400}
+              height={160}
+              sizes="400px"
               className="max-h-40 w-full rounded-md border object-cover"
             />
           </a>

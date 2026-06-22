@@ -1,12 +1,9 @@
 "use client";
 
-import * as React from "react";
 import { Crown, Medal, Trophy } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { useLeaderboard } from "@/lib/queries";
-import { createClient } from "@/lib/supabase/client";
-import { useQueryClient } from "@tanstack/react-query";
 import { formatNumber, cn } from "@/lib/utils";
 import { CardSkeletonGrid, EmptyState, ErrorState } from "@/components/states";
 
@@ -25,26 +22,6 @@ function RankIcon({ rank }: { rank: number }) {
 
 export function Leaderboard({ limit = 50 }: { limit?: number }) {
   const { data, isLoading, isError, refetch } = useLeaderboard(limit);
-  const qc = useQueryClient();
-
-  // Realtime: refresh whenever participant points change.
-  React.useEffect(() => {
-    const supabase = createClient();
-    const channel = supabase
-      .channel("leaderboard-participants")
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "participants" },
-        () => {
-          qc.invalidateQueries({ queryKey: ["leaderboard"] });
-          qc.invalidateQueries({ queryKey: ["participants"] });
-        }
-      )
-      .subscribe();
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [qc]);
 
   if (isLoading) return <CardSkeletonGrid count={3} />;
   if (isError) return <ErrorState onRetry={() => refetch()} />;

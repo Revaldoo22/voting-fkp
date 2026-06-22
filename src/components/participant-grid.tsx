@@ -2,8 +2,8 @@
 
 import * as React from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { ChevronRight } from "lucide-react";
-import { useQueryClient } from "@tanstack/react-query";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -11,34 +11,16 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { CardSkeletonGrid, EmptyState, ErrorState } from "@/components/states";
 import { useParticipants } from "@/lib/queries";
-import { createClient } from "@/lib/supabase/client";
 import { formatNumber } from "@/lib/utils";
 
 const PAGE_SIZE = 20;
 
 export function ParticipantGrid() {
   const { data, isLoading, isError, refetch } = useParticipants();
-  const qc = useQueryClient();
   const [search, setSearch] = React.useState("");
   const [page, setPage] = React.useState(1);
 
   React.useEffect(() => setPage(1), [search]);
-
-  // Realtime: refresh on point changes.
-  React.useEffect(() => {
-    const supabase = createClient();
-    const channel = supabase
-      .channel("home-participants")
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "participants" },
-        () => qc.invalidateQueries({ queryKey: ["participants"] })
-      )
-      .subscribe();
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [qc]);
 
   if (isLoading) return <CardSkeletonGrid />;
   if (isError) return <ErrorState onRetry={() => refetch()} />;
@@ -84,11 +66,12 @@ export function ParticipantGrid() {
               <Card className="h-full overflow-hidden transition-shadow group-hover:shadow-md">
                 <div className="relative aspect-square w-full overflow-hidden bg-muted">
                   {p.photo_url ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
+                    <Image
                       src={p.photo_url}
                       alt={p.name}
-                      className="h-full w-full object-cover transition-transform group-hover:scale-105"
+                      fill
+                      sizes="(max-width:768px) 50vw, (max-width:1280px) 25vw, 20vw"
+                      className="object-cover transition-transform group-hover:scale-105"
                     />
                   ) : (
                     <div className="flex h-full items-center justify-center">

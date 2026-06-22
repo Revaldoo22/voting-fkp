@@ -9,7 +9,9 @@
     "lint": "next lint",
     "seed:admin": "node scripts/seed-admin.mjs",
     "seed:dummy": "node scripts/seed-dummy.mjs",
-    "compress:photos": "node scripts/compress-photos.mjs"
+    "compress:photos": "node scripts/compress-photos.mjs",
+    "backup": "node scripts/backup-db.mjs",
+    "backup:storage": "node scripts/backup-storage.mjs"
   },
   "dependencies": {
     "@fingerprintjs/fingerprintjs": "^4.5.1",
