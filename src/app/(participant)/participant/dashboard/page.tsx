@@ -74,7 +74,7 @@ function ChangePhotoButton({ onChanged }: { onChanged: () => void }) {
       const path = `${user.id}/${Date.now()}.${ext}`;
       const { error: upErr } = await supabase.storage
         .from("participant-photos")
-        .upload(path, img, { upsert: true });
+        .upload(path, img, { upsert: true, cacheControl: "31536000" });
       if (upErr) {
         toast.error("Gagal upload: " + upErr.message);
         return;

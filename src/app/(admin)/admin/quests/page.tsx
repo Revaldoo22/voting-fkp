@@ -105,7 +105,7 @@ export default function AdminQuestsPage() {
       const path = `quest-ref/${Date.now()}.${ext}`;
       const { error: upErr } = await supabase.storage
         .from("participant-photos")
-        .upload(path, img, { upsert: true });
+        .upload(path, img, { upsert: true, cacheControl: "31536000" });
       if (upErr) {
         toast.error("Gagal upload gambar referensi: " + upErr.message);
         return;

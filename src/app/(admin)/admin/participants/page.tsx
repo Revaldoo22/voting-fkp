@@ -159,7 +159,7 @@ export default function AdminParticipantsPage() {
     const path = `${Date.now()}-${Math.round(Number(compressed.size))}.${ext}`;
     const { error } = await supabase.storage
       .from("participant-photos")
-      .upload(path, compressed, { upsert: false });
+      .upload(path, compressed, { upsert: false, cacheControl: "31536000" });
     if (error) {
       toast.error("Gagal upload foto: " + error.message);
       throw error;

@@ -423,7 +423,7 @@ function QuestCard({
           )}.${ext}`;
           const { error: upErr } = await supabase.storage
             .from("quest-proofs")
-            .upload(path, upFile, { upsert: false });
+            .upload(path, upFile, { upsert: false, cacheControl: "31536000" });
           if (upErr) {
             toast.error("Gagal mengunggah: " + upErr.message);
             return;
