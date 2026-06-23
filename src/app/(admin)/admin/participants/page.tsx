@@ -154,7 +154,9 @@ export default function AdminParticipantsPage() {
   async function uploadPhoto(): Promise<string | null> {
     if (!photo) return null;
     const supabase = createClient();
-    const compressed = await compressImage(photo);
+    // Foto peserta tampil di home (paling sering diakses) — kompres kecil
+    // untuk tekan cached egress.
+    const compressed = await compressImage(photo, { maxSize: 600, quality: 0.72 });
     const ext = compressed.name.split(".").pop();
     const path = `${Date.now()}-${Math.round(Number(compressed.size))}.${ext}`;
     const { error } = await supabase.storage

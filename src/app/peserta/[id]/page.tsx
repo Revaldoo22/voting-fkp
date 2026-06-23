@@ -416,7 +416,8 @@ function QuestCard({
         }
         const supabase = createClient();
         for (const f of files) {
-          const upFile = await compressImage(f);
+          // Proof cuma untuk verifikasi admin — kompres kecil (tekan egress).
+          const upFile = await compressImage(f, { maxSize: 900, quality: 0.7 });
           const ext = upFile.name.split(".").pop();
           const path = `${Date.now()}-${Math.round(
             Math.random() * 1e6
