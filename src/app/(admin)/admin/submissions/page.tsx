@@ -76,12 +76,26 @@ export default function AdminSubmissionsPage() {
     setJumpInput("");
   }
 
+  // Item yang sedang diproses (per-id) supaya tombol lain tetap aktif.
+  const [processing, setProcessing] = React.useState<Set<string>>(new Set());
+  const mark = (id: string, on: boolean) =>
+    setProcessing((prev) => {
+      const next = new Set(prev);
+      if (on) next.add(id);
+      else next.delete(id);
+      return next;
+    });
+
   async function approve(id: string) {
+    mark(id, true);
     try {
+      // Optimistic: item langsung hilang dari list (onMutate di hook).
       await review.mutateAsync({ id, status: "approved" });
       toast.success("Disetujui — poin ditambahkan.");
     } catch (e) {
       toast.error("Gagal memproses: " + (e as Error).message);
+    } finally {
+      mark(id, false);
     }
   }
 
@@ -269,10 +283,10 @@ export default function AdminSubmissionsPage() {
                     <Button
                       size="sm"
                       className="flex-1"
-                      disabled={review.isPending}
+                      disabled={processing.has(s.id)}
                       onClick={() => approve(s.id)}
                     >
-                      {review.isPending ? (
+                      {processing.has(s.id) ? (
                         <Loader2 className="h-4 w-4 animate-spin" />
                       ) : (
                         <Check className="h-4 w-4" />
@@ -283,7 +297,7 @@ export default function AdminSubmissionsPage() {
                       size="sm"
                       variant="destructive"
                       className="flex-1"
-                      disabled={review.isPending}
+                      disabled={processing.has(s.id)}
                       onClick={() => {
                         setRejectTarget(s.id);
                         setRejectNote("");

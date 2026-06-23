@@ -509,26 +509,57 @@ export function useSubmissionCounts() {
   });
 }
 
+type ReviewVars = {
+  id: string;
+  status: "approved" | "rejected";
+  note?: string;
+};
+
 export function useReviewSubmission() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async ({
-      id,
-      status,
-      note,
-    }: {
-      id: string;
-      status: "approved" | "rejected";
-      note?: string;
-    }) => {
+    mutationFn: async ({ id, status, note }: ReviewVars) => {
       const { error } = await sb()
         .from("submissions")
         .update({ status, review_note: note ?? null })
         .eq("id", id);
       if (error) throw error;
     },
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["submissions"] });
+    // Optimistic: langsung buang item dari list pending & sesuaikan counter,
+    // tanpa menunggu server / refetch list besar. Tombol lain tetap responsif.
+    onMutate: async ({ id, status }: ReviewVars) => {
+      await qc.cancelQueries({ queryKey: ["submissions"] });
+      const prevLists = qc.getQueriesData({ queryKey: ["submissions"] });
+      // Hapus item dari semua cache list submissions (kecuali counts).
+      qc.setQueriesData(
+        { queryKey: ["submissions"] },
+        (old: unknown) => {
+          if (!Array.isArray(old)) return old;
+          return old.filter((s) => (s as { id: string }).id !== id);
+        }
+      );
+      // Sesuaikan counter optimistik.
+      qc.setQueryData(
+        ["submissions", "counts"],
+        (c: { pending: number; approved: number; rejected: number; all: number } | undefined) =>
+          c
+            ? {
+                ...c,
+                pending: Math.max(0, c.pending - 1),
+                approved: c.approved + (status === "approved" ? 1 : 0),
+                rejected: c.rejected + (status === "rejected" ? 1 : 0),
+              }
+            : c
+      );
+      return { prevLists };
+    },
+    onError: (_err, _vars, ctx) => {
+      // Rollback list bila gagal.
+      ctx?.prevLists?.forEach(([key, val]) => qc.setQueryData(key, val));
+      qc.invalidateQueries({ queryKey: ["submissions", "counts"] });
+    },
+    onSettled: () => {
+      // Segarkan turunan poin (tidak menyentuh list submissions besar).
       qc.invalidateQueries({ queryKey: ["participants"] });
       qc.invalidateQueries({ queryKey: ["leaderboard"] });
     },
