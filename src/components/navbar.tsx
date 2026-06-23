@@ -41,8 +41,18 @@ export function Navbar({
     router.refresh();
   }
 
-  const isActive = (href: string) =>
-    pathname === href || (href !== "/" && pathname.startsWith(href));
+  // Link aktif = match terpanjang. Cegah "/admin" ikut nyala di
+  // "/admin/participants" (dulu double indicator). Prefix harus batas segmen.
+  const matchLen = (href: string) => {
+    if (pathname === href) return href.length;
+    if (href !== "/" && pathname.startsWith(href + "/")) return href.length;
+    return -1;
+  };
+  const activeHref = links.reduce(
+    (best, l) => (matchLen(l.href) > matchLen(best) ? l.href : best),
+    ""
+  );
+  const isActive = (href: string) => href !== "" && href === activeHref;
 
   return (
     <header className="sticky top-0 z-40 border-b border-border/60 bg-background/70 backdrop-blur-lg supports-[backdrop-filter]:bg-background/60">
@@ -79,15 +89,22 @@ export function Navbar({
               <Link
                 key={l.href}
                 href={l.href}
+                aria-current={active ? "page" : undefined}
                 className={cn(
-                  "flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+                  "relative flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
                   active
-                    ? "bg-primary/10 text-primary"
+                    ? "text-primary"
                     : "text-muted-foreground hover:bg-muted hover:text-foreground"
                 )}
               >
+                {active && (
+                  <span className="absolute inset-0 -z-10 rounded-lg bg-primary/10 ring-1 ring-inset ring-primary/20" />
+                )}
                 {Icon && <Icon className="h-4 w-4" />}
                 {l.label}
+                {active && (
+                  <span className="absolute inset-x-3 -bottom-px h-0.5 rounded-full bg-primary" />
+                )}
               </Link>
             );
           })}
@@ -121,10 +138,13 @@ export function Navbar({
                     <DropdownMenuItem key={l.href} asChild>
                       <Link
                         href={l.href}
+                        aria-current={active ? "page" : undefined}
                         className={cn(
+                          "gap-2",
                           l.cta
                             ? "font-semibold text-primary"
-                            : active && "text-primary"
+                            : active &&
+                                "bg-primary/10 font-medium text-primary focus:bg-primary/15"
                         )}
                       >
                         {Icon && <Icon className="h-4 w-4" />}
