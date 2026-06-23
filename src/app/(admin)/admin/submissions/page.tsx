@@ -59,7 +59,22 @@ export default function AdminSubmissionsPage() {
   }, [data, search]);
 
   const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
-  const paged = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+
+  // Jangan reset ke 1 saat approve. Kalau halaman jadi melebihi total (item
+  // berkurang), mundur ke halaman valid terakhir saja.
+  React.useEffect(() => {
+    if (page > pageCount) setPage(pageCount);
+  }, [page, pageCount]);
+
+  const safePage = Math.min(page, pageCount);
+  const paged = filtered.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
+
+  const [jumpInput, setJumpInput] = React.useState("");
+  function jumpToPage() {
+    const n = parseInt(jumpInput, 10);
+    if (!Number.isNaN(n)) setPage(Math.min(Math.max(1, n), pageCount));
+    setJumpInput("");
+  }
 
   async function approve(id: string) {
     try {
@@ -285,26 +300,41 @@ export default function AdminSubmissionsPage() {
         </div>
 
         {pageCount > 1 && (
-          <div className="flex items-center justify-center gap-3">
+          <div className="flex flex-wrap items-center justify-center gap-3">
             <Button
               variant="outline"
               size="sm"
-              disabled={page <= 1}
-              onClick={() => setPage((p) => p - 1)}
+              disabled={safePage <= 1}
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
             >
               Sebelumnya
             </Button>
             <span className="text-sm text-muted-foreground">
-              Hal {page} / {pageCount}
+              Hal {safePage} / {pageCount}
             </span>
             <Button
               variant="outline"
               size="sm"
-              disabled={page >= pageCount}
-              onClick={() => setPage((p) => p + 1)}
+              disabled={safePage >= pageCount}
+              onClick={() => setPage((p) => Math.min(pageCount, p + 1))}
             >
               Berikutnya
             </Button>
+            <div className="flex items-center gap-1">
+              <Input
+                type="number"
+                min={1}
+                max={pageCount}
+                value={jumpInput}
+                onChange={(e) => setJumpInput(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && jumpToPage()}
+                placeholder="Ke hal..."
+                className="h-9 w-24"
+              />
+              <Button variant="secondary" size="sm" onClick={jumpToPage}>
+                Lompat
+              </Button>
+            </div>
           </div>
         )}
         </>
