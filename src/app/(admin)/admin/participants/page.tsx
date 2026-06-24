@@ -3,7 +3,16 @@
 import * as React from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Copy, KeyRound, Loader2, Pencil, Plus, Trash2, UserPlus } from "lucide-react";
+import {
+  Copy,
+  Download,
+  KeyRound,
+  Loader2,
+  Pencil,
+  Plus,
+  Trash2,
+  UserPlus,
+} from "lucide-react";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -39,6 +48,7 @@ import { createClient } from "@/lib/supabase/client";
 import { compressImage } from "@/lib/image-compress";
 import { participantSchema, type ParticipantInput } from "@/lib/validations";
 import { formatNumber } from "@/lib/utils";
+import { dateStamp, exportToExcel } from "@/lib/export-excel";
 import type { ParticipantWithSchool } from "@/types/database";
 
 const selectCls =
@@ -92,6 +102,26 @@ export default function AdminParticipantsPage() {
   const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const paged = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
   React.useEffect(() => setPage(1), [search, sort]);
+
+  function handleExport() {
+    if (filtered.length === 0) {
+      toast.error("Tidak ada peserta untuk diekspor pada filter ini.");
+      return;
+    }
+    const rows = filtered.map((p) => ({
+      Nama: p.name,
+      "Nomor WA": p.profiles?.phone_number ?? "",
+      Sekolah: p.schools?.name ?? "",
+      Poin: p.total_points,
+      Status: p.status === "active" ? "Aktif" : "Nonaktif",
+      Deskripsi: p.description ?? "",
+    }));
+    exportToExcel(rows, {
+      fileName: `peserta-${dateStamp()}.xlsx`,
+      sheetName: "Peserta",
+    });
+    toast.success(`${formatNumber(rows.length)} peserta diekspor.`);
+  }
 
   // Password dialog (admin sets a participant's password).
   const [pwTarget, setPwTarget] = React.useState<ParticipantWithSchool | null>(
@@ -299,9 +329,18 @@ export default function AdminParticipantsPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">Kelola Peserta</h1>
-        <Button onClick={openCreate}>
-          <Plus className="h-4 w-4" /> Tambah Peserta
-        </Button>
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
+            onClick={handleExport}
+            disabled={filtered.length === 0}
+          >
+            <Download className="h-4 w-4" /> Export Excel
+          </Button>
+          <Button onClick={openCreate}>
+            <Plus className="h-4 w-4" /> Tambah Peserta
+          </Button>
+        </div>
       </div>
 
       <div className="flex flex-wrap items-center gap-2">

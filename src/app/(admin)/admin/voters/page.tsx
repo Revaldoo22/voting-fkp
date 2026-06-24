@@ -1,7 +1,10 @@
 "use client";
 
 import * as React from "react";
+import { Download, Loader2 } from "lucide-react";
+import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import {
@@ -21,6 +24,7 @@ import {
 } from "@/components/ui/table";
 import { EmptyState, ErrorState, LoadingState } from "@/components/states";
 import {
+  fetchAllAdminVoters,
   useAdminVoters,
   useAdminVotersCount,
   useParticipants,
@@ -29,6 +33,7 @@ import {
   type AdminVoter,
 } from "@/lib/queries";
 import { formatNumber, voterStatusLabel } from "@/lib/utils";
+import { dateStamp, exportToExcel } from "@/lib/export-excel";
 
 const PAGE_SIZE = 25;
 const selectCls =
@@ -91,14 +96,66 @@ export default function AdminVotersPage() {
   const current = Math.min(page, pageCount);
   const paged = data ?? [];
 
+  const [exporting, setExporting] = React.useState(false);
+
+  async function handleExport() {
+    setExporting(true);
+    try {
+      const all = await fetchAllAdminVoters({ ...baseFilters, sort });
+      if (all.length === 0) {
+        toast.error("Tidak ada data untuk diekspor pada filter ini.");
+        return;
+      }
+      const rows = all.map((v) => ({
+        Nama: v.voter_name,
+        "Nomor WA": v.voter_phone,
+        Email: v.voter_email ?? "",
+        Status: voterStatusLabel(v.voter_status) || "",
+        Kelas: v.voter_class ?? "",
+        Sekolah: v.voter_school ?? "",
+        Bergabung: v.first_seen
+          ? new Date(v.first_seen).toLocaleDateString("id-ID")
+          : "",
+        Vote: v.votes,
+        Quest: v.quests,
+        Poin: v.points,
+      }));
+      exportToExcel(rows, {
+        fileName: `voter-${dateStamp()}.xlsx`,
+        sheetName: "Voter",
+      });
+      toast.success(`${formatNumber(rows.length)} voter diekspor.`);
+    } catch (e) {
+      toast.error(
+        e instanceof Error ? e.message : "Gagal mengekspor data."
+      );
+    } finally {
+      setExporting(false);
+    }
+  }
+
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold">Daftar Voter</h1>
-        <p className="text-sm text-muted-foreground">
-          Total {formatNumber(totalCount)} voter. Klik baris untuk lihat
-          distribusi poin.
-        </p>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-bold">Daftar Voter</h1>
+          <p className="text-sm text-muted-foreground">
+            Total {formatNumber(totalCount)} voter. Klik baris untuk lihat
+            distribusi poin.
+          </p>
+        </div>
+        <Button
+          variant="outline"
+          onClick={handleExport}
+          disabled={exporting || totalCount === 0}
+        >
+          {exporting ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            <Download className="h-4 w-4" />
+          )}
+          Export Excel
+        </Button>
       </div>
 
       <div className="flex flex-wrap items-end gap-3">

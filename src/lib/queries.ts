@@ -117,6 +117,23 @@ export function useAdminVotersCount(filters: VoterFilters) {
   });
 }
 
+/**
+ * Ambil SEMUA voter yang cocok filter (tanpa paginasi) — dipakai untuk
+ * export Excel. Bukan hook; dipanggil on-demand saat tombol export diklik.
+ */
+export async function fetchAllAdminVoters(
+  filters: VoterFilters
+): Promise<AdminVoter[]> {
+  const { data, error } = await sb().rpc("admin_voters", {
+    ...voterRpcArgs(filters),
+    p_limit: 100000,
+    p_offset: 0,
+    p_sort: filters.sort ?? "recent",
+  });
+  if (error) throw error;
+  return (data ?? []) as AdminVoter[];
+}
+
 export type PointLogRow = {
   kind: "vote" | "quest";
   source: string;
