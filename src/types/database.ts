@@ -43,7 +43,7 @@ export interface Participant {
 }
 
 export type ProofType = "link" | "file";
-export type QuestFrequency = "once" | "daily";
+export type QuestFrequency = "once" | "daily" | "global";
 export type ContentKind = "engage" | "sound";
 
 export interface ParticipantContent {

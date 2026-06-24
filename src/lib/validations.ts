@@ -64,7 +64,7 @@ export const questSchema = z.object({
   point: z.coerce.number().int().min(0, "Poin tidak boleh negatif").max(1000),
   status: z.enum(["active", "inactive"]).default("active"),
   proof_type: z.enum(["link", "file"]).default("file"),
-  frequency: z.enum(["once", "daily"]).default("once"),
+  frequency: z.enum(["once", "daily", "global"]).default("once"),
   ref_link: z.string().url("Link tidak valid").optional().or(z.literal("")),
   ref_image: z.string().url().optional().or(z.literal("")),
 });

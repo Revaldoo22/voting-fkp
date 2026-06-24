@@ -21,10 +21,10 @@
 -- Block ini untuk setup baru yang menjalankan seed.sql langsung.
 -- proof_type 'file' = upload screenshot; 'link' = kirim URL postingan.
 insert into public.quests (name, description, point, status, proof_type, frequency) values
-  ('Follow Instagram STEKOM', 'Follow akun Instagram resmi STEKOM, lalu upload screenshot bukti follow.', 10, 'active', 'file', 'once'),
-  ('Follow TikTok STEKOM', 'Follow akun TikTok resmi STEKOM, lalu upload screenshot bukti follow.', 10, 'active', 'file', 'once'),
-  ('Follow Instagram Toploker', 'Follow akun Instagram Toploker, lalu upload screenshot bukti follow.', 10, 'active', 'file', 'once'),
-  ('Follow TikTok Toploker', 'Follow akun TikTok Toploker, lalu upload screenshot bukti follow.', 10, 'active', 'file', 'once'),
+  ('Follow Instagram STEKOM', 'Follow akun Instagram resmi STEKOM, lalu upload screenshot bukti follow.', 10, 'active', 'file', 'global'),
+  ('Follow TikTok STEKOM', 'Follow akun TikTok resmi STEKOM, lalu upload screenshot bukti follow.', 10, 'active', 'file', 'global'),
+  ('Follow Instagram Toploker', 'Follow akun Instagram Toploker, lalu upload screenshot bukti follow.', 10, 'active', 'file', 'global'),
+  ('Follow TikTok Toploker', 'Follow akun TikTok Toploker, lalu upload screenshot bukti follow.', 10, 'active', 'file', 'global'),
   ('Bikin Konten Dukungan', 'Buat konten (video/reel) dukungan untuk peserta, posting, lalu kirim link postingannya.', 50, 'active', 'link', 'once'),
   ('Like, Komen, Repost Video Peserta', 'Like, komentari, dan repost video peserta, lalu upload screenshot buktinya.', 20, 'active', 'file', 'once'),
   ('Konten Pakai Sound Video Peserta', 'Buat konten TikTok memakai sound yang ada di video peserta, lalu kirim link kontenmu.', 50, 'active', 'link', 'once')

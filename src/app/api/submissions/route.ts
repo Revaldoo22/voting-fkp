@@ -67,6 +67,14 @@ export async function POST(request: Request) {
         { error: "Kamu sudah mengerjakan quest ini untuk peserta tersebut." },
         { status: 409 }
       );
+    if (m.includes("GLOBAL_DONE"))
+      return NextResponse.json(
+        {
+          error:
+            "Kamu sudah mengerjakan quest follow ini. Cukup follow sekali — tak perlu diulang di peserta lain.",
+        },
+        { status: 409 }
+      );
     if (m.includes("DUPLICATE_LINK"))
       return NextResponse.json(
         {

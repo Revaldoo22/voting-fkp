@@ -235,9 +235,19 @@ export default function AdminQuestsPage() {
                     </TableCell>
                     <TableCell>
                       <Badge
-                        variant={q.frequency === "daily" ? "warning" : "outline"}
+                        variant={
+                          q.frequency === "daily"
+                            ? "warning"
+                            : q.frequency === "global"
+                              ? "accent"
+                              : "outline"
+                        }
                       >
-                        {q.frequency === "daily" ? "Harian" : "Sekali"}
+                        {q.frequency === "daily"
+                          ? "Harian"
+                          : q.frequency === "global"
+                            ? "Global (1x)"
+                            : "Sekali"}
                       </Badge>
                     </TableCell>
                     <TableCell>
@@ -319,8 +329,11 @@ export default function AdminQuestsPage() {
               <div className="space-y-1.5">
                 <Label>Frekuensi</Label>
                 <select className={selectCls} {...form.register("frequency")}>
-                  <option value="once">Sekali (selesai permanen)</option>
+                  <option value="once">Sekali per peserta (permanen)</option>
                   <option value="daily">Harian (ulang tiap hari)</option>
+                  <option value="global">
+                    Global — sekali untuk semua peserta (mis. follow)
+                  </option>
                 </select>
               </div>
             </div>
