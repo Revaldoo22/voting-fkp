@@ -5,6 +5,7 @@ import { use } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { MaintenanceOverlay } from "@/components/maintenance-overlay";
+import { EventClosedOverlay } from "@/components/event-closed-overlay";
 import {
   ArrowLeft,
   Heart,
@@ -89,6 +90,7 @@ export default function PublicParticipantPage({
   return (
     <div className="min-h-screen">
       <MaintenanceOverlay />
+      <EventClosedOverlay />
       <Navbar links={[{ href: "/ranking", label: "Ranking" }]} />
       <main className="container max-w-3xl space-y-6 py-8">
         <Button variant="ghost" size="sm" asChild>

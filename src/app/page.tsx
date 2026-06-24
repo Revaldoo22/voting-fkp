@@ -5,11 +5,13 @@ import { Navbar } from "@/components/navbar";
 import { ParticipantGrid } from "@/components/participant-grid";
 import { PrizeButtons } from "@/components/prize-buttons";
 import { MaintenanceOverlay } from "@/components/maintenance-overlay";
+import { EventClosedOverlay } from "@/components/event-closed-overlay";
 
 export default function HomePage() {
   return (
     <div className="min-h-screen">
       <MaintenanceOverlay />
+      <EventClosedOverlay />
       <Navbar
         links={[
           { href: "/ranking", label: "Ranking" },
